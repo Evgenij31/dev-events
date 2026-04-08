@@ -1,14 +1,35 @@
 import { useState, useMemo } from "react";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
 import { getEvents, DevEvent } from "@/lib/events";
 import EventCard from "@/components/EventCard";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 const types = ["all", "conference", "meetup", "workshop", "hackathon"] as const;
 
 export default function Events() {
   const [filter, setFilter] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
   const events = useMemo(() => getEvents(), []);
 
-  const filtered = filter === "all" ? events : events.filter((e) => e.type === filter);
+  const filtered = useMemo(() => {
+    let result = filter === "all" ? events : events.filter((e) => e.type === filter);
+    if (dateFrom) {
+      result = result.filter((e) => new Date(e.date) >= dateFrom);
+    }
+    if (dateTo) {
+      result = result.filter((e) => new Date(e.date) <= dateTo);
+    }
+    return result.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [events, filter, dateFrom, dateTo]);
 
   return (
     <div className="min-h-screen pt-24 pb-16">
@@ -19,7 +40,7 @@ export default function Events() {
         <p className="text-muted-foreground mb-8">Browse all upcoming developer events.</p>
 
         {/* Filter tabs */}
-        <div className="flex flex-wrap gap-2 mb-8">
+        <div className="flex flex-wrap gap-2 mb-4">
           {types.map((t) => (
             <button
               key={t}
@@ -33,6 +54,37 @@ export default function Events() {
               {t}
             </button>
           ))}
+        </div>
+
+        {/* Date range filter */}
+        <div className="flex flex-wrap items-center gap-3 mb-8">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className={cn("w-[180px] justify-start text-left font-mono text-sm", !dateFrom && "text-muted-foreground")}>
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {dateFrom ? format(dateFrom, "yyyy-MM-dd") : "From date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} initialFocus className="p-3 pointer-events-auto" />
+            </PopoverContent>
+          </Popover>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className={cn("w-[180px] justify-start text-left font-mono text-sm", !dateTo && "text-muted-foreground")}>
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {dateTo ? format(dateTo, "yyyy-MM-dd") : "To date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar mode="single" selected={dateTo} onSelect={setDateTo} initialFocus className="p-3 pointer-events-auto" />
+            </PopoverContent>
+          </Popover>
+          {(dateFrom || dateTo) && (
+            <Button variant="ghost" size="sm" className="font-mono text-xs text-muted-foreground" onClick={() => { setDateFrom(undefined); setDateTo(undefined); }}>
+              Clear dates
+            </Button>
+          )}
         </div>
 
         {filtered.length === 0 ? (
