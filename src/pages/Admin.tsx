@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getEvents, addEvent, updateEvent, deleteEvent, verifyAdmin, DevEvent } from "@/lib/events";
+import { getEvents, addEvent, updateEvent, deleteEvent, checkDuplicate, verifyAdmin, DevEvent } from "@/lib/events";
 import { scrapeEventsFromUrl, ScrapedEvent } from "@/lib/api/scrape-events";
 import { getSources, addSource, deleteSource, updateSourceLastScraped, ScrapeSource } from "@/lib/sources";
 import { Button } from "@/components/ui/button";
@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const emptyForm = { title: "", description: "", date: "", time: "", location: "", type: "meetup" as DevEvent["type"], tags: "" };
+const emptyForm = { title: "", description: "", date: "", time: "", location: "", type: "meetup" as DevEvent["type"], tags: "", url: "" };
 
 export default function Admin() {
   const [authed, setAuthed] = useState(false);
@@ -26,7 +26,6 @@ export default function Admin() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
 
-  // Scrape state
   const [scrapeUrl, setScrapeUrl] = useState("");
   const [scraping, setScraping] = useState(false);
   const [scrapedEvents, setScrapedEvents] = useState<ScrapedEvent[]>([]);
@@ -34,9 +33,10 @@ export default function Admin() {
   const [sources, setSources] = useState<ScrapeSource[]>([]);
   const [sourceName, setSourceName] = useState("");
 
-  const refresh = () => {
-    setEvents(getEvents());
-    setSources(getSources());
+  const refresh = async () => {
+    const [evts, srcs] = await Promise.all([getEvents(), getSources()]);
+    setEvents(evts);
+    setSources(srcs);
   };
 
   useEffect(() => {
@@ -53,14 +53,14 @@ export default function Admin() {
     }
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     const tags = form.tags.split(",").map((t) => t.trim()).filter(Boolean);
     if (editing) {
-      updateEvent(editing, { ...form, tags });
+      await updateEvent(editing, { ...form, tags, url: form.url || undefined });
       toast.success("Event updated.");
     } else {
-      addEvent({ ...form, tags });
+      await addEvent({ ...form, tags, url: form.url || undefined });
       toast.success("Event created.");
     }
     setForm(emptyForm);
@@ -70,13 +70,13 @@ export default function Admin() {
   };
 
   const startEdit = (event: DevEvent) => {
-    setForm({ ...event, tags: event.tags.join(", ") });
+    setForm({ ...event, tags: event.tags.join(", "), url: event.url || "" });
     setEditing(event.id);
     setShowForm(true);
   };
 
-  const handleDelete = (id: string) => {
-    deleteEvent(id);
+  const handleDelete = async (id: string) => {
+    await deleteEvent(id);
     toast.success("Event deleted.");
     refresh();
   };
@@ -95,8 +95,8 @@ export default function Admin() {
         toast.success(`Found ${events.length} event(s).`);
       }
       if (sourceId) {
-        updateSourceLastScraped(sourceId);
-        setSources(getSources());
+        await updateSourceLastScraped(sourceId);
+        setSources(await getSources());
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Scrape failed.");
@@ -105,12 +105,12 @@ export default function Admin() {
     }
   };
 
-  const handleImportSelected = () => {
-    const existingEvents = getEvents();
+  const handleImportSelected = async () => {
+    const existingEvents = await getEvents();
     let imported = 0;
     let skipped = 0;
 
-    selectedScrapes.forEach((idx) => {
+    for (const idx of selectedScrapes) {
       const ev = scrapedEvents[idx];
       const isDuplicate = existingEvents.some(
         (e) => e.title.toLowerCase() === ev.title.toLowerCase() && e.date === ev.date
@@ -118,10 +118,10 @@ export default function Admin() {
       if (isDuplicate) {
         skipped++;
       } else {
-        addEvent(ev);
+        await addEvent(ev);
         imported++;
       }
-    });
+    }
 
     toast.success(`Imported ${imported} event(s)${skipped > 0 ? `, skipped ${skipped} duplicate(s)` : ""}.`);
     setScrapedEvents([]);
@@ -129,21 +129,21 @@ export default function Admin() {
     refresh();
   };
 
-  const handleSaveSource = () => {
+  const handleSaveSource = async () => {
     if (!sourceName.trim() || !scrapeUrl.trim()) {
       toast.error("Enter a name and URL.");
       return;
     }
-    addSource(sourceName.trim(), scrapeUrl.trim());
+    await addSource(sourceName.trim(), scrapeUrl.trim());
     setSourceName("");
     toast.success("Source saved.");
-    setSources(getSources());
+    setSources(await getSources());
   };
 
-  const handleDeleteSource = (id: string) => {
-    deleteSource(id);
+  const handleDeleteSource = async (id: string) => {
+    await deleteSource(id);
     toast.success("Source deleted.");
-    setSources(getSources());
+    setSources(await getSources());
   };
 
   const toggleScrapeSelection = (idx: number) => {
@@ -162,16 +162,8 @@ export default function Admin() {
           <Lock className="h-10 w-10 text-primary mx-auto" />
           <h1 className="text-2xl font-mono font-bold text-foreground">Admin Access</h1>
           <p className="text-sm text-muted-foreground">Enter the admin password to manage events.</p>
-          <Input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="bg-muted border-border font-mono text-center"
-          />
-          <Button type="submit" className="w-full font-mono glow-primary">
-            Unlock
-          </Button>
+          <Input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className="bg-muted border-border font-mono text-center" />
+          <Button type="submit" className="w-full font-mono glow-primary">Unlock</Button>
         </form>
       </div>
     );
@@ -201,9 +193,7 @@ export default function Admin() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v as DevEvent["type"] })}>
-                <SelectTrigger className="bg-muted border-border font-mono">
-                  <SelectValue />
-                </SelectTrigger>
+                <SelectTrigger className="bg-muted border-border font-mono"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="conference">Conference</SelectItem>
                   <SelectItem value="meetup">Meetup</SelectItem>
@@ -213,6 +203,7 @@ export default function Admin() {
               </Select>
               <Input placeholder="Tags (comma separated)" value={form.tags} onChange={(e) => setForm({ ...form, tags: e.target.value })} className="bg-muted border-border font-mono" />
             </div>
+            <Input placeholder="Event URL (optional, for registration link)" value={form.url} onChange={(e) => setForm({ ...form, url: e.target.value })} className="bg-muted border-border font-mono" />
             <Button type="submit" className="font-mono glow-primary">{editing ? "Update" : "Create"} Event</Button>
           </form>
         )}
@@ -222,37 +213,20 @@ export default function Admin() {
           <h2 className="font-mono font-bold text-foreground flex items-center gap-2">
             <Globe className="h-5 w-5 text-primary" /> Scrape Events
           </h2>
-          <p className="text-sm text-muted-foreground">Paste a URL to scrape developer events from a website.</p>
+          <p className="text-sm text-muted-foreground">Paste a URL to scrape developer events. Auto-scraping runs twice per week for saved sources.</p>
           <div className="flex gap-2">
-            <Input
-              placeholder="https://example.com/events"
-              value={scrapeUrl}
-              onChange={(e) => setScrapeUrl(e.target.value)}
-              className="bg-muted border-border font-mono flex-1"
-            />
-            <Button
-              onClick={() => handleScrape(scrapeUrl)}
-              disabled={scraping || !scrapeUrl.trim()}
-              className="font-mono"
-            >
+            <Input placeholder="https://example.com/events" value={scrapeUrl} onChange={(e) => setScrapeUrl(e.target.value)} className="bg-muted border-border font-mono flex-1" />
+            <Button onClick={() => handleScrape(scrapeUrl)} disabled={scraping || !scrapeUrl.trim()} className="font-mono">
               {scraping ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Scraping...</> : "Scrape"}
             </Button>
           </div>
-
-          {/* Save as source */}
           <div className="flex gap-2 items-center">
-            <Input
-              placeholder="Source name (e.g. Dev.to Events)"
-              value={sourceName}
-              onChange={(e) => setSourceName(e.target.value)}
-              className="bg-muted border-border font-mono flex-1 h-9 text-sm"
-            />
+            <Input placeholder="Source name (e.g. Dev.to Events)" value={sourceName} onChange={(e) => setSourceName(e.target.value)} className="bg-muted border-border font-mono flex-1 h-9 text-sm" />
             <Button variant="outline" size="sm" onClick={handleSaveSource} className="font-mono">
               <Save className="h-3 w-3 mr-1" /> Save Source
             </Button>
           </div>
 
-          {/* Scraped results */}
           {scrapedEvents.length > 0 && (
             <div className="space-y-3 pt-2">
               <div className="flex items-center justify-between">
@@ -263,15 +237,12 @@ export default function Admin() {
               </div>
               {scrapedEvents.map((ev, idx) => (
                 <div key={idx} className="flex items-start gap-3 rounded-lg border bg-muted/30 px-4 py-3">
-                  <Checkbox
-                    checked={selectedScrapes.has(idx)}
-                    onCheckedChange={() => toggleScrapeSelection(idx)}
-                    className="mt-1"
-                  />
+                  <Checkbox checked={selectedScrapes.has(idx)} onCheckedChange={() => toggleScrapeSelection(idx)} className="mt-1" />
                   <div className="flex-1 min-w-0">
                     <p className="font-mono font-bold text-foreground text-sm truncate">{ev.title}</p>
                     <p className="text-xs text-muted-foreground">{ev.date} · {ev.time} · {ev.location} · {ev.type}</p>
                     <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{ev.description}</p>
+                    {ev.url && <p className="text-xs text-primary mt-1 truncate">{ev.url}</p>}
                     {ev.tags.length > 0 && (
                       <div className="flex gap-1 mt-1 flex-wrap">
                         {ev.tags.map((tag) => (
@@ -289,7 +260,7 @@ export default function Admin() {
         {/* Saved Sources */}
         {sources.length > 0 && (
           <div className="rounded-lg border bg-card p-6 mb-8 space-y-3">
-            <h2 className="font-mono font-bold text-foreground">Saved Sources</h2>
+            <h2 className="font-mono font-bold text-foreground">Saved Sources (auto-scraped twice/week)</h2>
             {sources.map((source) => (
               <div key={source.id} className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3">
                 <div>
@@ -319,6 +290,7 @@ export default function Admin() {
               <div>
                 <p className="font-mono font-bold text-foreground">{event.title}</p>
                 <p className="text-xs text-muted-foreground">{event.date} · {event.location} · {event.type}</p>
+                {event.url && <p className="text-xs text-primary truncate max-w-sm">{event.url}</p>}
               </div>
               <div className="flex gap-2">
                 <Button variant="ghost" size="icon" onClick={() => startEdit(event)} className="text-muted-foreground hover:text-primary">

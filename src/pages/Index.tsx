@@ -1,11 +1,16 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Code, Users, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { getEvents } from "@/lib/events";
+import { getEvents, DevEvent } from "@/lib/events";
 import EventCard from "@/components/EventCard";
 
 export default function Index() {
-  const events = getEvents().slice(0, 3);
+  const [events, setEvents] = useState<DevEvent[]>([]);
+
+  useEffect(() => {
+    getEvents().then((evts) => setEvents(evts.slice(0, 3)));
+  }, []);
 
   return (
     <div className="min-h-screen">

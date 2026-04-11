@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 export interface DevEvent {
   id: string;
   title: string;
@@ -7,85 +9,100 @@ export interface DevEvent {
   location: string;
   type: "conference" | "meetup" | "workshop" | "hackathon";
   tags: string[];
+  url?: string;
 }
 
-const STORAGE_KEY = "devevents_data";
 const ADMIN_PASSWORD = "admin123";
 
-const defaultEvents: DevEvent[] = [
-  {
-    id: "1",
-    title: "React Summit 2026",
-    description: "The biggest React conference with talks from core team members and industry leaders. Deep dives into Server Components, concurrent features, and the future of React.",
-    date: "2026-05-15",
-    time: "09:00",
-    location: "Amsterdam, Netherlands",
-    type: "conference",
-    tags: ["React", "Frontend", "JavaScript"],
-  },
-  {
-    id: "2",
-    title: "Rust Hack Night",
-    description: "An evening of collaborative coding in Rust. Bring your projects or join a team. All skill levels welcome.",
-    date: "2026-04-20",
-    time: "18:00",
-    location: "Berlin, Germany",
-    type: "hackathon",
-    tags: ["Rust", "Systems", "Open Source"],
-  },
-  {
-    id: "3",
-    title: "DevOps Workshop: K8s at Scale",
-    description: "Hands-on workshop covering Kubernetes deployment strategies, autoscaling, and observability for production workloads.",
-    date: "2026-06-10",
-    time: "10:00",
-    location: "Online",
-    type: "workshop",
-    tags: ["DevOps", "Kubernetes", "Cloud"],
-  },
-  {
-    id: "4",
-    title: "Local JS Meetup #42",
-    description: "Monthly JavaScript meetup featuring lightning talks, networking, and pizza. This month: TypeScript 6.0 deep dive.",
-    date: "2026-04-05",
-    time: "19:00",
-    location: "San Francisco, CA",
-    type: "meetup",
-    tags: ["JavaScript", "TypeScript", "Community"],
-  },
-];
+export async function getEvents(): Promise<DevEvent[]> {
+  const { data, error } = await supabase
+    .from("events")
+    .select("*")
+    .order("date", { ascending: true });
 
-export function getEvents(): DevEvent[] {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored) return JSON.parse(stored);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultEvents));
-  return defaultEvents;
-}
-
-export function saveEvents(events: DevEvent[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
-}
-
-export function addEvent(event: Omit<DevEvent, "id">): DevEvent {
-  const events = getEvents();
-  const newEvent = { ...event, id: Date.now().toString() };
-  events.push(newEvent);
-  saveEvents(events);
-  return newEvent;
-}
-
-export function updateEvent(id: string, data: Partial<DevEvent>) {
-  const events = getEvents();
-  const idx = events.findIndex((e) => e.id === id);
-  if (idx !== -1) {
-    events[idx] = { ...events[idx], ...data };
-    saveEvents(events);
+  if (error) {
+    console.error("Error fetching events:", error);
+    return [];
   }
+
+  return (data || []).map((row: any) => ({
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    date: row.date,
+    time: row.time,
+    location: row.location,
+    type: row.type,
+    tags: row.tags || [],
+    url: row.url || undefined,
+  }));
 }
 
-export function deleteEvent(id: string) {
-  const events = getEvents().filter((e) => e.id !== id);
-  saveEvents(events);
+export async function addEvent(event: Omit<DevEvent, "id">): Promise<DevEvent | null> {
+  const { data, error } = await supabase
+    .from("events")
+    .insert({
+      title: event.title,
+      description: event.description,
+      date: event.date,
+      time: event.time,
+      location: event.location,
+      type: event.type,
+      tags: event.tags,
+      url: event.url || null,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error adding event:", error);
+    return null;
+  }
+
+  return {
+    id: data.id,
+    title: data.title,
+    description: data.description,
+    date: data.date,
+    time: data.time,
+    location: data.location,
+    type: data.type as DevEvent["type"],
+    tags: data.tags || [],
+    url: data.url || undefined,
+  };
+}
+
+export async function updateEvent(id: string, updates: Partial<DevEvent>) {
+  const { error } = await supabase
+    .from("events")
+    .update({
+      ...(updates.title !== undefined && { title: updates.title }),
+      ...(updates.description !== undefined && { description: updates.description }),
+      ...(updates.date !== undefined && { date: updates.date }),
+      ...(updates.time !== undefined && { time: updates.time }),
+      ...(updates.location !== undefined && { location: updates.location }),
+      ...(updates.type !== undefined && { type: updates.type }),
+      ...(updates.tags !== undefined && { tags: updates.tags }),
+      ...(updates.url !== undefined && { url: updates.url || null }),
+    })
+    .eq("id", id);
+
+  if (error) console.error("Error updating event:", error);
+}
+
+export async function deleteEvent(id: string) {
+  const { error } = await supabase.from("events").delete().eq("id", id);
+  if (error) console.error("Error deleting event:", error);
+}
+
+export async function checkDuplicate(title: string, date: string): Promise<boolean> {
+  const { data } = await supabase
+    .from("events")
+    .select("id")
+    .ilike("title", title)
+    .eq("date", date)
+    .limit(1);
+  return (data?.length || 0) > 0;
 }
 
 export function verifyAdmin(password: string): boolean {

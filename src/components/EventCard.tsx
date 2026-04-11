@@ -1,5 +1,5 @@
 import { DevEvent } from "@/lib/events";
-import { Calendar, Clock, MapPin } from "lucide-react";
+import { Calendar, Clock, MapPin, ExternalLink } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const typeColors: Record<string, string> = {
@@ -11,7 +11,7 @@ const typeColors: Record<string, string> = {
 
 export default function EventCard({ event }: { event: DevEvent }) {
   return (
-    <div className="group rounded-lg border bg-card p-6 transition-all hover:border-primary/30 hover:glow-primary">
+    <div className="group rounded-lg border bg-card p-6 transition-all hover:border-primary/30 hover:glow-primary flex flex-col">
       <div className="flex items-start justify-between gap-4 mb-3">
         <span className={`inline-block rounded-full border px-3 py-0.5 text-xs font-mono uppercase tracking-wider ${typeColors[event.type]}`}>
           {event.type}
@@ -39,13 +39,27 @@ export default function EventCard({ event }: { event: DevEvent }) {
         </span>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 mb-4">
         {event.tags.map((tag) => (
           <Badge key={tag} variant="secondary" className="font-mono text-xs bg-muted text-muted-foreground border-border">
             {tag}
           </Badge>
         ))}
       </div>
+
+      {event.url && (
+        <div className="mt-auto pt-2">
+          <a
+            href={event.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-sm font-mono text-primary hover:text-primary/80 transition-colors"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            Register / Join
+          </a>
+        </div>
+      )}
     </div>
   );
 }

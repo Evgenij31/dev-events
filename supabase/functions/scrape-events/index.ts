@@ -36,7 +36,6 @@ serve(async (req) => {
       });
     }
 
-    // Step 1: Scrape the URL with Firecrawl
     let formattedUrl = url.trim();
     if (!formattedUrl.startsWith("http://") && !formattedUrl.startsWith("https://")) {
       formattedUrl = `https://${formattedUrl}`;
@@ -77,7 +76,6 @@ serve(async (req) => {
 
     console.log("Scraped content length:", markdown.length);
 
-    // Step 2: Extract events using AI with tool calling
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -90,7 +88,7 @@ serve(async (req) => {
           {
             role: "system",
             content:
-              "You are an expert at extracting developer event information from web content. Extract all events you can find. For each event, determine the type (conference, meetup, workshop, or hackathon) and relevant tags.",
+              "You are an expert at extracting developer event information from web content. Extract all events you can find. For each event, determine the type (conference, meetup, workshop, or hackathon), relevant tags, and the registration/event URL if available.",
           },
           {
             role: "user",
@@ -118,6 +116,7 @@ serve(async (req) => {
                         location: { type: "string", description: "Event location or 'Online'" },
                         type: { type: "string", enum: ["conference", "meetup", "workshop", "hackathon"] },
                         tags: { type: "array", items: { type: "string" }, description: "Relevant technology tags" },
+                        url: { type: "string", description: "Registration or event page URL, if available" },
                       },
                       required: ["title", "description", "date", "time", "location", "type", "tags"],
                       additionalProperties: false,
@@ -137,21 +136,18 @@ serve(async (req) => {
     if (!aiResponse.ok) {
       if (aiResponse.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limited, please try again later." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       if (aiResponse.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Add funds in Settings > Workspace > Usage." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        return new Response(JSON.stringify({ error: "AI credits exhausted." }), {
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       const errText = await aiResponse.text();
       console.error("AI error:", aiResponse.status, errText);
       return new Response(JSON.stringify({ error: "AI extraction failed" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -160,8 +156,7 @@ serve(async (req) => {
 
     if (!toolCall?.function?.arguments) {
       return new Response(JSON.stringify({ error: "AI did not return structured data" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 

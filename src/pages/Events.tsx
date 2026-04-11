@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { getEvents, DevEvent } from "@/lib/events";
@@ -18,7 +18,11 @@ export default function Events() {
   const [filter, setFilter] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState<Date | undefined>();
   const [dateTo, setDateTo] = useState<Date | undefined>();
-  const events = useMemo(() => getEvents(), []);
+  const [events, setEvents] = useState<DevEvent[]>([]);
+
+  useEffect(() => {
+    getEvents().then(setEvents);
+  }, []);
 
   const filtered = useMemo(() => {
     let result = filter === "all" ? events : events.filter((e) => e.type === filter);
