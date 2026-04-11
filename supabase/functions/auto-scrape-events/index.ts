@@ -138,7 +138,8 @@ serve(async (req) => {
         if (!toolCall?.function?.arguments) continue;
 
         const extracted = JSON.parse(toolCall.function.arguments);
-        const events = extracted.events || [];
+        const today = new Date().toISOString().split("T")[0];
+        const events = (extracted.events || []).filter((ev: any) => ev.date >= today);
 
         // Check for duplicates and insert new events
         for (const ev of events) {
