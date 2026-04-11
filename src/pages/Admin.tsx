@@ -107,11 +107,17 @@ export default function Admin() {
 
   const handleImportSelected = async () => {
     const existingEvents = await getEvents();
+    const today = new Date().toISOString().split("T")[0];
     let imported = 0;
     let skipped = 0;
+    let pastSkipped = 0;
 
     for (const idx of selectedScrapes) {
       const ev = scrapedEvents[idx];
+      if (ev.date < today) {
+        pastSkipped++;
+        continue;
+      }
       const isDuplicate = existingEvents.some(
         (e) => e.title.toLowerCase() === ev.title.toLowerCase() && e.date === ev.date
       );
@@ -123,7 +129,10 @@ export default function Admin() {
       }
     }
 
-    toast.success(`Imported ${imported} event(s)${skipped > 0 ? `, skipped ${skipped} duplicate(s)` : ""}.`);
+    const parts = [`Imported ${imported} event(s)`];
+    if (skipped > 0) parts.push(`${skipped} duplicate(s)`);
+    if (pastSkipped > 0) parts.push(`${pastSkipped} past event(s) skipped`);
+    toast.success(parts.join(", ") + ".");
     setScrapedEvents([]);
     setSelectedScrapes(new Set());
     refresh();

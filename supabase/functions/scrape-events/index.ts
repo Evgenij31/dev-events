@@ -161,9 +161,11 @@ serve(async (req) => {
     }
 
     const extracted = JSON.parse(toolCall.function.arguments);
-    console.log("Extracted events:", extracted.events?.length || 0);
+    const today = new Date().toISOString().split("T")[0];
+    const futureEvents = (extracted.events || []).filter((ev: any) => ev.date >= today);
+    console.log(`Extracted ${extracted.events?.length || 0} events, ${futureEvents.length} are future/current`);
 
-    return new Response(JSON.stringify({ events: extracted.events || [] }), {
+    return new Response(JSON.stringify({ events: futureEvents }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
