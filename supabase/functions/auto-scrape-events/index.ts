@@ -114,6 +114,11 @@ serve(async (req) => {
                             type: { type: "string", enum: ["conference", "meetup", "workshop", "hackathon"] },
                             tags: { type: "array", items: { type: "string" } },
                             url: { type: "string" },
+                            continent: { type: "string", description: "Continent: Africa, Antarctica, Asia, Europe, North America, Oceania, South America, or Online" },
+                            country: { type: "string" },
+                            city: { type: "string" },
+                            latitude: { type: "number" },
+                            longitude: { type: "number" },
                           },
                           required: ["title", "description", "date", "time", "location", "type", "tags"],
                         },
@@ -164,6 +169,11 @@ serve(async (req) => {
             type: ev.type || "meetup",
             tags: ev.tags || [],
             url: ev.url || null,
+            continent: ev.continent || null,
+            country: ev.country || null,
+            city: ev.city || null,
+            latitude: typeof ev.latitude === "number" ? ev.latitude : null,
+            longitude: typeof ev.longitude === "number" ? ev.longitude : null,
           });
 
           if (insertErr) {
