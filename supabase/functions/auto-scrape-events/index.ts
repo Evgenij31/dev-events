@@ -160,6 +160,20 @@ serve(async (req) => {
             continue;
           }
 
+          // Enrich missing geo info
+          const hasCoords = typeof ev.latitude === "number" && typeof ev.longitude === "number";
+          if (!hasCoords || !ev.continent || !ev.country) {
+            const geo = await geocode(ev.location || "");
+            if (geo) {
+              ev.latitude = ev.latitude ?? geo.latitude;
+              ev.longitude = ev.longitude ?? geo.longitude;
+              ev.city = ev.city || geo.city;
+              ev.country = ev.country || geo.country;
+              ev.continent = ev.continent || geo.continent;
+            }
+            if (!isOnline(ev.location || "")) await new Promise((r) => setTimeout(r, 1100));
+          }
+
           const { error: insertErr } = await supabase.from("events").insert({
             title: ev.title,
             description: ev.description,
