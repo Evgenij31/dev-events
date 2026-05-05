@@ -88,7 +88,7 @@ serve(async (req) => {
           {
             role: "system",
             content:
-              "You are an expert at extracting developer event information from web content. Extract all events you can find. For each event, determine the type (conference, meetup, workshop, or hackathon), relevant tags, and the registration/event URL if available.",
+              "You are an expert at extracting developer event information from web content. Extract all events you can find. For each event, determine the type (conference, meetup, workshop, or hackathon), relevant tags, the registration/event URL if available, and region info (continent, country, city, plus approximate latitude/longitude of the city). For virtual events, set continent/country/city to 'Online' and omit coordinates.",
           },
           {
             role: "user",

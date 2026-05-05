@@ -85,7 +85,7 @@ serve(async (req) => {
             messages: [
               {
                 role: "system",
-                content: "Extract all developer events from the web content. For each event determine the type (conference, meetup, workshop, or hackathon), relevant tags, and the registration URL if available.",
+                content: "Extract all developer events from the web content. For each event determine the type (conference, meetup, workshop, or hackathon), relevant tags, registration URL, and region info (continent, country, city, latitude, longitude of the city). Use 'Online' for virtual events and omit coordinates in that case.",
               },
               {
                 role: "user",
