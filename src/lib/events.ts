@@ -10,9 +10,33 @@ export interface DevEvent {
   type: "conference" | "meetup" | "workshop" | "hackathon";
   tags: string[];
   url?: string;
+  continent?: string;
+  country?: string;
+  city?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 const ADMIN_PASSWORD = "admin123";
+
+function mapRow(row: any): DevEvent {
+  return {
+    id: row.id,
+    title: row.title,
+    description: row.description,
+    date: row.date,
+    time: row.time,
+    location: row.location,
+    type: row.type,
+    tags: row.tags || [],
+    url: row.url || undefined,
+    continent: row.continent || undefined,
+    country: row.country || undefined,
+    city: row.city || undefined,
+    latitude: row.latitude ?? undefined,
+    longitude: row.longitude ?? undefined,
+  };
+}
 
 export async function getEvents(): Promise<DevEvent[]> {
   const { data, error } = await supabase
@@ -24,18 +48,7 @@ export async function getEvents(): Promise<DevEvent[]> {
     console.error("Error fetching events:", error);
     return [];
   }
-
-  return (data || []).map((row: any) => ({
-    id: row.id,
-    title: row.title,
-    description: row.description,
-    date: row.date,
-    time: row.time,
-    location: row.location,
-    type: row.type,
-    tags: row.tags || [],
-    url: row.url || undefined,
-  }));
+  return (data || []).map(mapRow);
 }
 
 export async function addEvent(event: Omit<DevEvent, "id">): Promise<DevEvent | null> {
@@ -50,6 +63,11 @@ export async function addEvent(event: Omit<DevEvent, "id">): Promise<DevEvent | 
       type: event.type,
       tags: event.tags,
       url: event.url || null,
+      continent: event.continent || null,
+      country: event.country || null,
+      city: event.city || null,
+      latitude: event.latitude ?? null,
+      longitude: event.longitude ?? null,
     })
     .select()
     .single();
@@ -58,18 +76,7 @@ export async function addEvent(event: Omit<DevEvent, "id">): Promise<DevEvent | 
     console.error("Error adding event:", error);
     return null;
   }
-
-  return {
-    id: data.id,
-    title: data.title,
-    description: data.description,
-    date: data.date,
-    time: data.time,
-    location: data.location,
-    type: data.type as DevEvent["type"],
-    tags: data.tags || [],
-    url: data.url || undefined,
-  };
+  return mapRow(data);
 }
 
 export async function updateEvent(id: string, updates: Partial<DevEvent>) {
@@ -84,6 +91,11 @@ export async function updateEvent(id: string, updates: Partial<DevEvent>) {
       ...(updates.type !== undefined && { type: updates.type }),
       ...(updates.tags !== undefined && { tags: updates.tags }),
       ...(updates.url !== undefined && { url: updates.url || null }),
+      ...(updates.continent !== undefined && { continent: updates.continent || null }),
+      ...(updates.country !== undefined && { country: updates.country || null }),
+      ...(updates.city !== undefined && { city: updates.city || null }),
+      ...(updates.latitude !== undefined && { latitude: updates.latitude ?? null }),
+      ...(updates.longitude !== undefined && { longitude: updates.longitude ?? null }),
     })
     .eq("id", id);
 
@@ -107,4 +119,16 @@ export async function checkDuplicate(title: string, date: string): Promise<boole
 
 export function verifyAdmin(password: string): boolean {
   return password === ADMIN_PASSWORD;
+}
+
+// Haversine distance in km
+export function distanceKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
 }

@@ -88,7 +88,7 @@ serve(async (req) => {
           {
             role: "system",
             content:
-              "You are an expert at extracting developer event information from web content. Extract all events you can find. For each event, determine the type (conference, meetup, workshop, or hackathon), relevant tags, and the registration/event URL if available.",
+              "You are an expert at extracting developer event information from web content. Extract all events you can find. For each event, determine the type (conference, meetup, workshop, or hackathon), relevant tags, the registration/event URL if available, and region info (continent, country, city, plus approximate latitude/longitude of the city). For virtual events, set continent/country/city to 'Online' and omit coordinates.",
           },
           {
             role: "user",
@@ -117,6 +117,11 @@ serve(async (req) => {
                         type: { type: "string", enum: ["conference", "meetup", "workshop", "hackathon"] },
                         tags: { type: "array", items: { type: "string" }, description: "Relevant technology tags" },
                         url: { type: "string", description: "Registration or event page URL, if available" },
+                        continent: { type: "string", description: "Continent: Africa, Antarctica, Asia, Europe, North America, Oceania, or South America. Use 'Online' if virtual." },
+                        country: { type: "string", description: "Country name in English, or 'Online' if virtual." },
+                        city: { type: "string", description: "City name, or 'Online' if virtual." },
+                        latitude: { type: "number", description: "Approximate latitude of the event city. Omit if online or unknown." },
+                        longitude: { type: "number", description: "Approximate longitude of the event city. Omit if online or unknown." },
                       },
                       required: ["title", "description", "date", "time", "location", "type", "tags"],
                       additionalProperties: false,

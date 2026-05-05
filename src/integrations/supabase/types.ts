@@ -16,11 +16,16 @@ export type Database = {
     Tables: {
       events: {
         Row: {
+          city: string | null
+          continent: string | null
+          country: string | null
           created_at: string
           date: string
           description: string
           id: string
+          latitude: number | null
           location: string
+          longitude: number | null
           tags: string[]
           time: string
           title: string
@@ -28,11 +33,16 @@ export type Database = {
           url: string | null
         }
         Insert: {
+          city?: string | null
+          continent?: string | null
+          country?: string | null
           created_at?: string
           date: string
           description: string
           id?: string
+          latitude?: number | null
           location?: string
+          longitude?: number | null
           tags?: string[]
           time?: string
           title: string
@@ -40,11 +50,16 @@ export type Database = {
           url?: string | null
         }
         Update: {
+          city?: string | null
+          continent?: string | null
+          country?: string | null
           created_at?: string
           date?: string
           description?: string
           id?: string
+          latitude?: number | null
           location?: string
+          longitude?: number | null
           tags?: string[]
           time?: string
           title?: string
