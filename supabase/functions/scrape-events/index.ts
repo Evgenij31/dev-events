@@ -6,6 +6,48 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+const CONTINENT_BY_CC: Record<string, string> = {
+  US: "North America", CA: "North America", MX: "North America", GT: "North America", CR: "North America", PA: "North America", CU: "North America", DO: "North America",
+  BR: "South America", AR: "South America", CL: "South America", CO: "South America", PE: "South America", VE: "South America", UY: "South America", BO: "South America", EC: "South America", PY: "South America",
+  GB: "Europe", IE: "Europe", FR: "Europe", DE: "Europe", ES: "Europe", PT: "Europe", IT: "Europe", NL: "Europe", BE: "Europe", LU: "Europe", CH: "Europe", AT: "Europe", PL: "Europe", CZ: "Europe", SK: "Europe", HU: "Europe", RO: "Europe", BG: "Europe", GR: "Europe", SE: "Europe", NO: "Europe", FI: "Europe", DK: "Europe", IS: "Europe", EE: "Europe", LV: "Europe", LT: "Europe", UA: "Europe", BY: "Europe", MD: "Europe", RU: "Europe", RS: "Europe", HR: "Europe", SI: "Europe", BA: "Europe", AL: "Europe", MK: "Europe", ME: "Europe", XK: "Europe", TR: "Europe",
+  CN: "Asia", JP: "Asia", KR: "Asia", IN: "Asia", PK: "Asia", BD: "Asia", LK: "Asia", NP: "Asia", TH: "Asia", VN: "Asia", PH: "Asia", ID: "Asia", MY: "Asia", SG: "Asia", HK: "Asia", TW: "Asia", AE: "Asia", SA: "Asia", QA: "Asia", KW: "Asia", BH: "Asia", OM: "Asia", IL: "Asia", JO: "Asia", LB: "Asia", IR: "Asia", IQ: "Asia", AF: "Asia", KZ: "Asia", UZ: "Asia",
+  EG: "Africa", ZA: "Africa", NG: "Africa", KE: "Africa", MA: "Africa", TN: "Africa", DZ: "Africa", ET: "Africa", GH: "Africa", UG: "Africa", TZ: "Africa", SN: "Africa", CI: "Africa", CM: "Africa",
+  AU: "Oceania", NZ: "Oceania", FJ: "Oceania", PG: "Oceania",
+};
+
+function isOnline(loc: string): boolean {
+  const l = (loc || "").toLowerCase();
+  return !l.trim() || l === "online" || l.includes("online") || l.includes("virtual") || l.includes("remote");
+}
+
+async function geocode(location: string) {
+  if (isOnline(location)) {
+    return { latitude: null, longitude: null, city: "Online", country: "Online", continent: "Online" };
+  }
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=1&q=${encodeURIComponent(location)}`;
+    const res = await fetch(url, {
+      headers: { "User-Agent": "lovable-dev-events/1.0", "Accept": "application/json" },
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!Array.isArray(data) || data.length === 0) return null;
+    const r = data[0];
+    const addr = r.address || {};
+    const cc = (addr.country_code || "").toUpperCase();
+    return {
+      latitude: parseFloat(r.lat),
+      longitude: parseFloat(r.lon),
+      city: addr.city || addr.town || addr.village || addr.municipality || addr.county || null,
+      country: addr.country || null,
+      continent: CONTINENT_BY_CC[cc] || null,
+    };
+  } catch (e) {
+    console.error("geocode error", e);
+    return null;
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -169,6 +211,21 @@ serve(async (req) => {
     const today = new Date().toISOString().split("T")[0];
     const futureEvents = (extracted.events || []).filter((ev: any) => ev.date >= today);
     console.log(`Extracted ${extracted.events?.length || 0} events, ${futureEvents.length} are future/current`);
+
+    // Enrich missing geo info
+    for (const ev of futureEvents) {
+      const hasCoords = typeof ev.latitude === "number" && typeof ev.longitude === "number";
+      if (hasCoords && ev.continent && ev.country) continue;
+      const geo = await geocode(ev.location || "");
+      if (geo) {
+        ev.latitude = ev.latitude ?? geo.latitude;
+        ev.longitude = ev.longitude ?? geo.longitude;
+        ev.city = ev.city || geo.city;
+        ev.country = ev.country || geo.country;
+        ev.continent = ev.continent || geo.continent;
+      }
+      if (!isOnline(ev.location || "")) await new Promise((r) => setTimeout(r, 1100));
+    }
 
     return new Response(JSON.stringify({ events: futureEvents }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
