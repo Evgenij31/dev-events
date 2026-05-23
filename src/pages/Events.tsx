@@ -22,7 +22,7 @@ import {
 import { toast } from "sonner";
 
 const types = ["all", "conference", "meetup", "workshop", "hackathon"] as const;
-const NEAR_RADIUS_KM = 50;
+const NEAR_RADIUS_KM = 100;
 
 export default function Events() {
   const [filter, setFilter] = useState<string>("all");
