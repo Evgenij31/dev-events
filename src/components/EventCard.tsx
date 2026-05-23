@@ -1,6 +1,9 @@
 import { DevEvent } from "@/lib/events";
-import { Calendar, Clock, MapPin, ExternalLink } from "lucide-react";
+import { Calendar, Clock, MapPin, ExternalLink, Heart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useFavorites } from "@/hooks/useFavorites";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 const typeColors: Record<string, string> = {
   conference: "bg-primary/20 text-primary border-primary/30",
@@ -10,9 +13,35 @@ const typeColors: Record<string, string> = {
 };
 
 export default function EventCard({ event }: { event: DevEvent }) {
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const favorited = isFavorite(event.id);
+
+  const onHeart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+    toggleFavorite(event.id);
+  };
+
   return (
-    <div className="group rounded-lg border bg-card p-6 transition-all hover:border-primary/30 hover:glow-primary flex flex-col">
-      <div className="flex items-start justify-between gap-4 mb-3">
+    <div className="group relative rounded-lg border bg-card p-6 transition-all hover:border-primary/30 hover:glow-primary flex flex-col">
+      <button
+        onClick={onHeart}
+        aria-label={favorited ? "Remove from favorites" : "Add to favorites"}
+        className="absolute top-4 right-4 p-1.5 rounded-md hover:bg-muted transition-colors"
+      >
+        <Heart
+          className={`h-5 w-5 transition-colors ${
+            favorited ? "fill-destructive text-destructive" : "text-muted-foreground hover:text-destructive"
+          }`}
+        />
+      </button>
+
+      <div className="flex items-start justify-between gap-4 mb-3 pr-10">
         <span className={`inline-block rounded-full border px-3 py-0.5 text-xs font-mono uppercase tracking-wider ${typeColors[event.type]}`}>
           {event.type}
         </span>
