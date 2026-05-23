@@ -43,7 +43,7 @@ function isOnline(loc: string): boolean {
 
 async function geocode(location: string): Promise<GeoResult | null> {
   if (isOnline(location)) return null;
-  const url = `https://nominatim.openstreetmap.org/search?format=jsonv2format=jsonv2&addressdetails=1&limit=1addressdetails=1format=jsonv2&addressdetails=1&limit=1accept-language=enformat=jsonv2&addressdetails=1&limit=1limit=1&q=${encodeURIComponent(location)}`;
+  const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&accept-language=en&limit=1&q=${encodeURIComponent(location)}`;
   const res = await fetch(url, {
     headers: {
       "User-Agent": "lovable-dev-events/1.0 (geocoder)",
