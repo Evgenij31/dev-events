@@ -25,7 +25,7 @@ async function geocode(location: string) {
     return { latitude: null, longitude: null, city: "Online", country: "Online", continent: "Online" };
   }
   try {
-    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=1&q=${encodeURIComponent(location)}`;
+    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&accept-language=en&limit=1&q=${encodeURIComponent(location)}`;
     const res = await fetch(url, {
       headers: { "User-Agent": "lovable-dev-events/1.0", "Accept": "application/json" },
     });
