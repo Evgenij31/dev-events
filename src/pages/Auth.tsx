@@ -15,6 +15,7 @@ export default function Auth() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -26,10 +27,16 @@ export default function Auth() {
     setLoading(true);
     try {
       if (mode === "signup") {
+        if (!username.trim() || username.trim().length < 3) {
+          throw new Error("Username must be at least 3 characters.");
+        }
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/favorites` },
+          options: {
+            emailRedirectTo: `${window.location.origin}/favorites`,
+            data: { username: username.trim() },
+          },
         });
         if (error) throw error;
         toast.success("Account created. You're signed in.");
