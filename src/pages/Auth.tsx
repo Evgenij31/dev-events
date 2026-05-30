@@ -15,6 +15,7 @@ export default function Auth() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -26,10 +27,16 @@ export default function Auth() {
     setLoading(true);
     try {
       if (mode === "signup") {
+        if (!username.trim() || username.trim().length < 3) {
+          throw new Error("Username must be at least 3 characters.");
+        }
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: `${window.location.origin}/favorites` },
+          options: {
+            emailRedirectTo: `${window.location.origin}/favorites`,
+            data: { username: username.trim() },
+          },
         });
         if (error) throw error;
         toast.success("Account created. You're signed in.");
@@ -66,6 +73,23 @@ export default function Auth() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {mode === "signup" && (
+              <div>
+                <Label htmlFor="username" className="font-mono text-xs text-muted-foreground">USERNAME</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  required
+                  minLength={3}
+                  maxLength={32}
+                  pattern="[a-zA-Z0-9_\-]+"
+                  title="Letters, numbers, underscore and hyphen only"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="font-mono mt-1"
+                />
+              </div>
+            )}
             <div>
               <Label htmlFor="email" className="font-mono text-xs text-muted-foreground">EMAIL</Label>
               <Input
