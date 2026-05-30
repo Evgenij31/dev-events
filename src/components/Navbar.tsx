@@ -67,6 +67,9 @@ export default function Navbar() {
               Favorites
             </Link>
           )}
+        </div>
+
+        <div className="hidden md:flex items-center">
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger className="px-4 py-2 rounded-md font-mono text-sm text-foreground hover:bg-primary/10 flex items-center gap-1.5 outline-none">
