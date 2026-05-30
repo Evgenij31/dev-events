@@ -73,6 +73,23 @@ export default function Auth() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {mode === "signup" && (
+              <div>
+                <Label htmlFor="username" className="font-mono text-xs text-muted-foreground">USERNAME</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  required
+                  minLength={3}
+                  maxLength={32}
+                  pattern="[a-zA-Z0-9_\-]+"
+                  title="Letters, numbers, underscore and hyphen only"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="font-mono mt-1"
+                />
+              </div>
+            )}
             <div>
               <Label htmlFor="email" className="font-mono text-xs text-muted-foreground">EMAIL</Label>
               <Input
