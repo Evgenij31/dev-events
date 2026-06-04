@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Terminal, Menu, X, LogOut, Heart, LogIn, ChevronDown, User as UserIcon } from "lucide-react";
+import { Terminal, Menu, X, LogOut, Heart, LogIn, ChevronDown, User as UserIcon, Settings } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import {
