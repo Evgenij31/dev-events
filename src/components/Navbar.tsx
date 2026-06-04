@@ -131,6 +131,10 @@ export default function Navbar() {
           ))}
           {user && (
             <>
+              <div className="px-4 py-3 font-mono text-sm text-foreground border-t mt-2 flex items-center gap-1.5">
+                <UserIcon className="h-4 w-4" />
+                {displayName}
+              </div>
               <Link
                 to="/favorites"
                 onClick={() => setOpen(false)}
@@ -138,10 +142,13 @@ export default function Navbar() {
               >
                 Favorites
               </Link>
-              <div className="px-4 py-3 font-mono text-sm text-foreground border-t mt-2 flex items-center gap-1.5">
-                <UserIcon className="h-4 w-4" />
-                {displayName}
-              </div>
+              <Link
+                to="/profile"
+                onClick={() => setOpen(false)}
+                className="block px-4 py-3 font-mono text-sm text-muted-foreground"
+              >
+                Edit profile
+              </Link>
               <button
                 onClick={handleSignOut}
                 className="block px-4 py-3 font-mono text-sm text-muted-foreground w-full text-left"
