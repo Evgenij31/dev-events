@@ -82,6 +82,15 @@ export default function Navbar() {
                   {user.email}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/favorites")} className="cursor-pointer">
+                  <Heart className="h-4 w-4 mr-2" />
+                  Favorites
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/profile")} className="cursor-pointer">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Edit profile
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
                   <LogOut className="h-4 w-4 mr-2" />
                   Sign out
