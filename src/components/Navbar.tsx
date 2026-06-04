@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Terminal, Menu, X, LogOut, Heart, LogIn, ChevronDown, User as UserIcon } from "lucide-react";
+import { Terminal, Menu, X, LogOut, Heart, LogIn, ChevronDown, User as UserIcon, Settings } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -82,6 +82,15 @@ export default function Navbar() {
                   {user.email}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/favorites")} className="cursor-pointer">
+                  <Heart className="h-4 w-4 mr-2" />
+                  Favorites
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate("/profile")} className="cursor-pointer">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Edit profile
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer">
                   <LogOut className="h-4 w-4 mr-2" />
                   Sign out
@@ -122,6 +131,10 @@ export default function Navbar() {
           ))}
           {user && (
             <>
+              <div className="px-4 py-3 font-mono text-sm text-foreground border-t mt-2 flex items-center gap-1.5">
+                <UserIcon className="h-4 w-4" />
+                {displayName}
+              </div>
               <Link
                 to="/favorites"
                 onClick={() => setOpen(false)}
@@ -129,10 +142,13 @@ export default function Navbar() {
               >
                 Favorites
               </Link>
-              <div className="px-4 py-3 font-mono text-sm text-foreground border-t mt-2 flex items-center gap-1.5">
-                <UserIcon className="h-4 w-4" />
-                {displayName}
-              </div>
+              <Link
+                to="/profile"
+                onClick={() => setOpen(false)}
+                className="block px-4 py-3 font-mono text-sm text-muted-foreground"
+              >
+                Edit profile
+              </Link>
               <button
                 onClick={handleSignOut}
                 className="block px-4 py-3 font-mono text-sm text-muted-foreground w-full text-left"

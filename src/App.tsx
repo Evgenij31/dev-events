@@ -14,6 +14,7 @@ import Contact from "./pages/Contact";
 import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import Favorites from "./pages/Favorites";
+import EditProfile from "./pages/EditProfile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
                   <Route path="/" element={<Index />} />
                   <Route path="/events" element={<Events />} />
                   <Route path="/favorites" element={<Favorites />} />
+                  <Route path="/profile" element={<EditProfile />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/about" element={<About />} />
                   <Route path="/contact" element={<Contact />} />
