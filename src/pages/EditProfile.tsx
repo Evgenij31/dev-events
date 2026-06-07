@@ -33,8 +33,7 @@ export default function EditProfile() {
     setSaving(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ username: trimmed })
-      .eq("user_id", user.id);
+      .upsert({ user_id: user.id, username: trimmed }, { onConflict: "user_id" });
     setSaving(false);
     if (error) {
       toast.error(error.message.includes("duplicate") ? "Username already taken." : error.message);
