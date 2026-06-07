@@ -54,19 +54,6 @@ export default function Navbar() {
               {l.label}
             </Link>
           ))}
-          {user && (
-            <Link
-              to="/favorites"
-              className={`px-4 py-2 rounded-md font-mono text-sm transition-colors flex items-center gap-1.5 ${
-                pathname === "/favorites"
-                  ? "text-primary bg-primary/10"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <Heart className="h-4 w-4" />
-              Favorites
-            </Link>
-          )}
         </div>
 
         <div className="hidden md:flex items-center">
