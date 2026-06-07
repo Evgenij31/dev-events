@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
-import { Heart } from "lucide-react";
+import { Heart, Archive } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -31,6 +31,7 @@ export default function Favorites() {
   const { favoriteIds } = useFavorites();
   const [events, setEvents] = useState<DevEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showPast, setShowPast] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -51,6 +52,19 @@ export default function Favorites() {
         setLoading(false);
       });
   }, [user, favoriteIds]);
+
+  const today = new Date().toISOString().split("T")[0];
+  const { upcoming, past } = useMemo(() => {
+    const upcoming: DevEvent[] = [];
+    const past: DevEvent[] = [];
+    for (const e of events) {
+      if (e.date < today) past.push(e);
+      else upcoming.push(e);
+    }
+    upcoming.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+    past.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    return { upcoming, past };
+  }, [events, today]);
 
   if (authLoading) return null;
   if (!user) return <Navigate to="/auth" replace />;
@@ -73,11 +87,37 @@ export default function Favorites() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {events.map((e) => (
-              <EventCard key={e.id} event={e} />
-            ))}
-          </div>
+          <>
+            {upcoming.length === 0 ? (
+              <p className="text-muted-foreground font-mono text-center py-10">No upcoming favorites.</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {upcoming.map((e) => (
+                  <EventCard key={e.id} event={e} />
+                ))}
+              </div>
+            )}
+
+            {past.length > 0 && (
+              <div className="mt-16">
+                <button
+                  onClick={() => setShowPast(!showPast)}
+                  className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-mono text-lg font-bold mb-6"
+                >
+                  <Archive className="h-5 w-5" />
+                  Past Events ({past.length})
+                  <span className="text-xs font-normal ml-2">{showPast ? "▲ Hide" : "▼ Show"}</span>
+                </button>
+                {showPast && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-75">
+                    {past.map((e) => (
+                      <EventCard key={e.id} event={e} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
