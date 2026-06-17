@@ -15,6 +15,9 @@ export interface DevEvent {
   city?: string;
   latitude?: number;
   longitude?: number;
+  feeAmount?: number;
+  feeCurrency?: string;
+  feeIsFree?: boolean;
 }
 
 const ADMIN_PASSWORD = "admin123";
@@ -35,6 +38,9 @@ function mapRow(row: any): DevEvent {
     city: row.city || undefined,
     latitude: row.latitude ?? undefined,
     longitude: row.longitude ?? undefined,
+    feeAmount: row.fee_amount != null ? Number(row.fee_amount) : undefined,
+    feeCurrency: row.fee_currency || undefined,
+    feeIsFree: row.fee_is_free ?? undefined,
   };
 }
 

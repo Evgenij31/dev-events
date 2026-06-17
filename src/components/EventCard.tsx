@@ -1,8 +1,10 @@
 import { DevEvent } from "@/lib/events";
-import { Calendar, Clock, MapPin, ExternalLink, Heart } from "lucide-react";
+import { Calendar, Clock, MapPin, ExternalLink, Heart, Ticket } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useAuth } from "@/hooks/useAuth";
+import { useCurrency } from "@/hooks/useCurrency";
+import { convert, formatMoney } from "@/lib/currency";
 import { useNavigate } from "react-router-dom";
 
 const typeColors: Record<string, string> = {
@@ -11,6 +13,44 @@ const typeColors: Record<string, string> = {
   workshop: "bg-accent/20 text-accent border-accent/30",
   hackathon: "bg-destructive/20 text-destructive border-destructive/30",
 };
+
+function FeeLine({ event }: { event: DevEvent }) {
+  const { currency, rates, ready } = useCurrency();
+
+  let label: string;
+  let className = "text-muted-foreground";
+  let title: string | undefined;
+
+  if (event.feeIsFree) {
+    label = "Free";
+    className = "text-accent";
+  } else if (typeof event.feeAmount === "number" && event.feeCurrency) {
+    const orig = formatMoney(event.feeAmount, event.feeCurrency);
+    if (ready && event.feeCurrency.toUpperCase() !== currency.toUpperCase()) {
+      const converted = convert(event.feeAmount, event.feeCurrency, currency, rates);
+      if (converted != null) {
+        label = `${formatMoney(converted, currency)}`;
+        title = `Original: ${orig}`;
+      } else {
+        label = orig;
+      }
+    } else {
+      label = orig;
+    }
+    className = "text-foreground";
+  } else {
+    label = "No data";
+    className = "text-muted-foreground/70 italic";
+  }
+
+  return (
+    <div className="flex items-center gap-1.5 text-xs font-mono mb-2" title={title}>
+      <Ticket className="h-3.5 w-3.5 text-primary" />
+      <span className="text-muted-foreground">Fee:</span>
+      <span className={className}>{label}</span>
+    </div>
+  );
+}
 
 export default function EventCard({ event }: { event: DevEvent }) {
   const { isFavorite, toggleFavorite } = useFavorites();
@@ -76,8 +116,9 @@ export default function EventCard({ event }: { event: DevEvent }) {
         ))}
       </div>
 
-      {event.url && (
-        <div className="mt-auto pt-2">
+      <div className="mt-auto pt-2">
+        <FeeLine event={event} />
+        {event.url && (
           <a
             href={event.url}
             target="_blank"
@@ -87,8 +128,8 @@ export default function EventCard({ event }: { event: DevEvent }) {
             <ExternalLink className="h-3.5 w-3.5" />
             Register / Join
           </a>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
