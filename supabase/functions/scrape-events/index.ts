@@ -129,8 +129,8 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content:
-              "You are an expert at extracting developer event information from web content. Extract all events you can find. For each event, determine the type (conference, meetup, workshop, or hackathon), relevant tags, the registration/event URL if available, and region info (continent, country, city, plus approximate latitude/longitude of the city). For virtual events, set continent/country/city to 'Online' and omit coordinates.",
+              content:
+                "You are an expert at extracting developer event information from web content. Extract all events you can find. For each event, determine the type (conference, meetup, workshop, or hackathon), relevant tags, the registration/event URL if available, region info (continent, country, city, plus approximate latitude/longitude of the city), and fee/ticket-price information. For virtual events, set continent/country/city to 'Online' and omit coordinates. For fees: if the event is explicitly free, set fee_is_free=true. If a paid ticket price is shown, return the lowest price as fee_amount with the ISO 4217 fee_currency (e.g. USD, EUR, GBP). If no fee information is available, omit all three fee fields.",
           },
           {
             role: "user",
@@ -164,6 +164,9 @@ serve(async (req) => {
                         city: { type: "string", description: "City name, or 'Online' if virtual." },
                         latitude: { type: "number", description: "Approximate latitude of the event city. Omit if online or unknown." },
                         longitude: { type: "number", description: "Approximate longitude of the event city. Omit if online or unknown." },
+                        fee_is_free: { type: "boolean", description: "True if the event is explicitly free. Omit if unknown." },
+                        fee_amount: { type: "number", description: "Lowest ticket/registration price as a number (no currency symbol). Omit if free or unknown." },
+                        fee_currency: { type: "string", description: "ISO 4217 currency code for fee_amount (e.g. USD, EUR, GBP). Omit if free or unknown." },
                       },
                       required: ["title", "description", "date", "time", "location", "type", "tags"],
                       additionalProperties: false,
