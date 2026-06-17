@@ -212,9 +212,14 @@ export default function Admin() {
           <h1 className="text-3xl font-mono font-bold text-foreground">
             <span className="text-primary">$</span> admin panel
           </h1>
-          <Button onClick={() => { setShowForm(!showForm); setEditing(null); setForm(emptyForm); }} className="font-mono" variant={showForm ? "outline" : "default"}>
-            {showForm ? <><X className="h-4 w-4 mr-2" /> Cancel</> : <><Plus className="h-4 w-4 mr-2" /> New Event</>}
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleBackfillFees} disabled={backfilling} variant="outline" className="font-mono">
+              {backfilling ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Backfilling...</> : <><Ticket className="h-4 w-4 mr-2" /> Backfill Fees</>}
+            </Button>
+            <Button onClick={() => { setShowForm(!showForm); setEditing(null); setForm(emptyForm); }} className="font-mono" variant={showForm ? "outline" : "default"}>
+              {showForm ? <><X className="h-4 w-4 mr-2" /> Cancel</> : <><Plus className="h-4 w-4 mr-2" /> New Event</>}
+            </Button>
+          </div>
         </div>
 
         {showForm && (
