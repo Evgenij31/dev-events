@@ -125,7 +125,7 @@ serve(async (req) => {
             messages: [
               {
                 role: "system",
-                content: "Extract all developer events from the web content. For each event determine the type (conference, meetup, workshop, or hackathon), relevant tags, registration URL, and region info (continent, country, city, latitude, longitude of the city). Use 'Online' for virtual events and omit coordinates in that case.",
+                content: "Extract all developer events from the web content. For each event determine the type (conference, meetup, workshop, or hackathon), relevant tags, registration URL, region info (continent, country, city, latitude, longitude of the city), and fee/ticket-price information. Use 'Online' for virtual events and omit coordinates in that case. For fees: if explicitly free set fee_is_free=true; if a paid price is listed return fee_amount (number) and fee_currency (ISO 4217 code); if unknown, omit all fee fields.",
               },
               {
                 role: "user",
@@ -159,6 +159,9 @@ serve(async (req) => {
                             city: { type: "string" },
                             latitude: { type: "number" },
                             longitude: { type: "number" },
+                            fee_is_free: { type: "boolean" },
+                            fee_amount: { type: "number" },
+                            fee_currency: { type: "string", description: "ISO 4217 code, e.g. USD, EUR" },
                           },
                           required: ["title", "description", "date", "time", "location", "type", "tags"],
                         },
@@ -228,6 +231,9 @@ serve(async (req) => {
             city: ev.city || null,
             latitude: typeof ev.latitude === "number" ? ev.latitude : null,
             longitude: typeof ev.longitude === "number" ? ev.longitude : null,
+            fee_is_free: typeof ev.fee_is_free === "boolean" ? ev.fee_is_free : null,
+            fee_amount: typeof ev.fee_amount === "number" ? ev.fee_amount : null,
+            fee_currency: typeof ev.fee_currency === "string" ? ev.fee_currency.toUpperCase() : null,
           });
 
           if (insertErr) {
