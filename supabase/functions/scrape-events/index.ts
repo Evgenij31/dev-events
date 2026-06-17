@@ -230,7 +230,15 @@ serve(async (req) => {
       if (!isOnline(ev.location || "")) await new Promise((r) => setTimeout(r, 1100));
     }
 
-    return new Response(JSON.stringify({ events: futureEvents }), {
+    // Normalize fee fields to camelCase for the frontend
+    const normalized = futureEvents.map((ev: any) => ({
+      ...ev,
+      feeIsFree: ev.fee_is_free ?? undefined,
+      feeAmount: ev.fee_amount ?? undefined,
+      feeCurrency: ev.fee_currency ?? undefined,
+    }));
+
+    return new Response(JSON.stringify({ events: normalized }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
