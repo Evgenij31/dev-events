@@ -22,6 +22,9 @@ export type Database = {
           created_at: string
           date: string
           description: string
+          fee_amount: number | null
+          fee_currency: string | null
+          fee_is_free: boolean | null
           id: string
           latitude: number | null
           location: string
@@ -39,6 +42,9 @@ export type Database = {
           created_at?: string
           date: string
           description: string
+          fee_amount?: number | null
+          fee_currency?: string | null
+          fee_is_free?: boolean | null
           id?: string
           latitude?: number | null
           location?: string
@@ -56,6 +62,9 @@ export type Database = {
           created_at?: string
           date?: string
           description?: string
+          fee_amount?: number | null
+          fee_currency?: string | null
+          fee_is_free?: boolean | null
           id?: string
           latitude?: number | null
           location?: string

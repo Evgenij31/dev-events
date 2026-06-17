@@ -15,6 +15,9 @@ export interface DevEvent {
   city?: string;
   latitude?: number;
   longitude?: number;
+  feeAmount?: number;
+  feeCurrency?: string;
+  feeIsFree?: boolean;
 }
 
 const ADMIN_PASSWORD = "admin123";
@@ -35,6 +38,9 @@ function mapRow(row: any): DevEvent {
     city: row.city || undefined,
     latitude: row.latitude ?? undefined,
     longitude: row.longitude ?? undefined,
+    feeAmount: row.fee_amount != null ? Number(row.fee_amount) : undefined,
+    feeCurrency: row.fee_currency || undefined,
+    feeIsFree: row.fee_is_free ?? undefined,
   };
 }
 
@@ -68,6 +74,9 @@ export async function addEvent(event: Omit<DevEvent, "id">): Promise<DevEvent | 
       city: event.city || null,
       latitude: event.latitude ?? null,
       longitude: event.longitude ?? null,
+      fee_amount: event.feeAmount ?? null,
+      fee_currency: event.feeCurrency || null,
+      fee_is_free: event.feeIsFree ?? null,
     })
     .select()
     .single();
@@ -96,6 +105,9 @@ export async function updateEvent(id: string, updates: Partial<DevEvent>) {
       ...(updates.city !== undefined && { city: updates.city || null }),
       ...(updates.latitude !== undefined && { latitude: updates.latitude ?? null }),
       ...(updates.longitude !== undefined && { longitude: updates.longitude ?? null }),
+      ...(updates.feeAmount !== undefined && { fee_amount: updates.feeAmount ?? null }),
+      ...(updates.feeCurrency !== undefined && { fee_currency: updates.feeCurrency || null }),
+      ...(updates.feeIsFree !== undefined && { fee_is_free: updates.feeIsFree ?? null }),
     })
     .eq("id", id);
 

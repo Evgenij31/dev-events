@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { getEvents, addEvent, updateEvent, deleteEvent, checkDuplicate, verifyAdmin, DevEvent } from "@/lib/events";
 import { scrapeEventsFromUrl, ScrapedEvent } from "@/lib/api/scrape-events";
+import { supabase } from "@/integrations/supabase/client";
 import { getSources, addSource, deleteSource, updateSourceLastScraped, ScrapeSource } from "@/lib/sources";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Lock, Plus, Pencil, Trash2, X, Globe, Loader2, Save, RefreshCw } from "lucide-react";
+import { Lock, Plus, Pencil, Trash2, X, Globe, Loader2, Save, RefreshCw, Ticket } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -32,6 +33,32 @@ export default function Admin() {
   const [selectedScrapes, setSelectedScrapes] = useState<Set<number>>(new Set());
   const [sources, setSources] = useState<ScrapeSource[]>([]);
   const [sourceName, setSourceName] = useState("");
+  const [backfilling, setBackfilling] = useState(false);
+
+  const handleBackfillFees = async () => {
+    setBackfilling(true);
+    let totalUpdated = 0;
+    let totalProcessed = 0;
+    try {
+      // Run in batches until done or error
+      for (let i = 0; i < 20; i++) {
+        const { data, error } = await supabase.functions.invoke("backfill-event-fees", {
+          body: { limit: 20 },
+        });
+        if (error) { toast.error(error.message || "Backfill failed"); break; }
+        if (data?.error) { toast.error(data.error); break; }
+        totalProcessed += data?.processed || 0;
+        totalUpdated += data?.updated || 0;
+        if (!data?.remaining) break;
+      }
+      toast.success(`Backfill complete: ${totalUpdated} updated of ${totalProcessed} processed.`);
+      refresh();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Backfill failed");
+    } finally {
+      setBackfilling(false);
+    }
+  };
 
   const refresh = async () => {
     const [evts, srcs] = await Promise.all([getEvents(), getSources()]);
@@ -185,9 +212,14 @@ export default function Admin() {
           <h1 className="text-3xl font-mono font-bold text-foreground">
             <span className="text-primary">$</span> admin panel
           </h1>
-          <Button onClick={() => { setShowForm(!showForm); setEditing(null); setForm(emptyForm); }} className="font-mono" variant={showForm ? "outline" : "default"}>
-            {showForm ? <><X className="h-4 w-4 mr-2" /> Cancel</> : <><Plus className="h-4 w-4 mr-2" /> New Event</>}
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleBackfillFees} disabled={backfilling} variant="outline" className="font-mono">
+              {backfilling ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Backfilling...</> : <><Ticket className="h-4 w-4 mr-2" /> Backfill Fees</>}
+            </Button>
+            <Button onClick={() => { setShowForm(!showForm); setEditing(null); setForm(emptyForm); }} className="font-mono" variant={showForm ? "outline" : "default"}>
+              {showForm ? <><X className="h-4 w-4 mr-2" /> Cancel</> : <><Plus className="h-4 w-4 mr-2" /> New Event</>}
+            </Button>
+          </div>
         </div>
 
         {showForm && (
