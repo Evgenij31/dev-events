@@ -1,52 +1,51 @@
+## Goal
+Add a `fee` field to every event card. Display:
+- "Free" if no cost
+- The fee amount in the **viewer's local currency** (live-converted)
+- "No data" if unknown
 
+Also backfill fees for all existing events that have a URL.
 
-## Scrape Developer Events from Websites
+## 1. Database (migration)
+- Add to `public.events`:
+  - `fee_amount numeric` (nullable) — original numeric value
+  - `fee_currency text` (nullable) — ISO code, e.g. `USD`, `EUR`
+  - `fee_is_free boolean` (nullable) — `true` = explicitly free, `null` = unknown
+- `fee_amount` + `fee_currency` both null AND `fee_is_free` null ⇒ "No data".
 
-This feature adds the ability to scrape event data from external websites using **Firecrawl** and an AI model to extract structured event data from the scraped content.
+## 2. Scraping (extract fee)
+Update `supabase/functions/scrape-events/index.ts`:
+- Extend the AI tool schema with `fee_is_free` (bool), `fee_amount` (number), `fee_currency` (ISO 4217 code).
+- Prompt: "If the event is explicitly free, set fee_is_free=true. If a ticket/registration price is shown, return the lowest price as fee_amount + ISO currency code. If no fee info exists, omit all fee fields."
+- Persist these fields wherever events are inserted (`auto-scrape-events` + admin/manual insert in `src/lib/events.ts`).
 
-### How it works
+## 3. Backfill existing events (one-off)
+New edge function `supabase/functions/backfill-event-fees/index.ts`:
+- Select all events with a `url` and no fee data set.
+- For each, Firecrawl-scrape the URL (markdown), then ask the AI gateway for `{ fee_is_free, fee_amount, fee_currency }`.
+- Update the row. Skip on failure, log progress.
+- Trigger manually from the **Admin page** via a new "Backfill fees" button (uses the existing admin password gate). Runs in batches to avoid timeouts.
 
-1. **Admin pastes a URL** in the admin panel → Firecrawl scrapes the page → AI extracts structured event data → events are added to the app
-2. **Saved sources** can be stored so the admin can re-scrape them with one click
+## 4. Currency conversion (live, viewer-based)
+- Detect viewer currency once per session:
+  - Try `Intl.NumberFormat().resolvedOptions()` and a free IP lookup (e.g. `https://ipapi.co/json/` → `currency`). Fallback: `USD`.
+  - Store in a React context (`CurrencyProvider`) + `localStorage`.
+- Fetch FX rates from a free no-key API (`https://api.exchangerate.host/latest?base=USD`), cache in `localStorage` for 24 h.
+- Helper `formatFee(amount, fromCurrency, toCurrency, rates)` → `Intl.NumberFormat(locale, { style: 'currency', currency })`.
 
-### Prerequisites
+## 5. UI (`src/components/EventCard.tsx`)
+Add a small line above the Register/Join link:
+```
+🎟  Fee: Free          (when fee_is_free)
+🎟  Fee: €185 (~$199)  (converted; original shown faintly in tooltip)
+🎟  Fee: No data       (muted)
+```
+Use a `Ticket` icon from lucide-react and the existing terminal/neon styling.
 
-- **Firecrawl connector** must be connected (for web scraping)
-- **Lovable Cloud** must be enabled (for edge functions)
+## 6. Types
+After migration, regenerated `src/integrations/supabase/types.ts` exposes the new columns; update `DevEvent` in `src/lib/events.ts` and `mapRow`.
 
-### Implementation Steps
-
-**1. Connect Firecrawl and enable Lovable Cloud**
-- Enable Lovable Cloud for edge function support
-- Connect the Firecrawl connector for web scraping credentials
-
-**2. Create edge function: `scrape-events`**
-- Accepts a URL in the request body
-- Calls Firecrawl to scrape the page as markdown
-- Sends the markdown to the AI gateway to extract structured event data (title, description, date, time, location, type, tags) as JSON
-- Returns an array of extracted events
-
-**3. Create `src/lib/api/scrape-events.ts`**
-- Frontend helper that calls the edge function via `supabase.functions.invoke('scrape-events', { body: { url } })`
-- Returns parsed event data
-
-**4. Create `src/lib/sources.ts`**
-- Manages saved scrape sources in localStorage (URL, name, last scraped date)
-- CRUD operations: `getSources`, `addSource`, `deleteSource`, `updateSource`
-
-**5. Add scrape UI to the Admin panel (`Admin.tsx`)**
-- New "Scrape Events" section with:
-  - URL input + "Scrape" button for one-off scraping
-  - Results preview showing extracted events with checkboxes to select which to import
-  - "Import Selected" button that calls `addEvent` for each selected event
-- New "Saved Sources" section:
-  - List of saved URLs with "Re-scrape" and "Delete" buttons
-  - "Save Source" option when scraping a new URL
-
-### Technical Details
-
-- The edge function uses Firecrawl's scrape endpoint with `formats: ['markdown']` to get clean text
-- AI extraction uses a structured schema to parse events from the markdown
-- Duplicate detection: before importing, check if an event with the same title+date already exists
-- The scrape results are previewed before import so the admin has full control
-
+## Open questions / assumptions
+- I'll use **exchangerate.host** (no API key) for FX. If you'd rather use a specific provider, say so.
+- Viewer-currency detection uses **ipapi.co** free tier (1k req/day, no key). I'll cache aggressively. Tell me if you want a different source or a manual currency selector instead.
+- Backfill is triggered manually from Admin (safer than running automatically on every existing event since it consumes Firecrawl credits).
