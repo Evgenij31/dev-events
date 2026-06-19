@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { getEvents, addEvent, updateEvent, deleteEvent, checkDuplicate, verifyAdmin, DevEvent } from "@/lib/events";
 import { scrapeEventsFromUrl, ScrapedEvent } from "@/lib/api/scrape-events";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseData } from "@/integrations/supabase/dataClient";
 import { getSources, addSource, deleteSource, updateSourceLastScraped, ScrapeSource } from "@/lib/sources";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,7 +42,7 @@ export default function Admin() {
     try {
       // Run in batches until done or error
       for (let i = 0; i < 20; i++) {
-        const { data, error } = await supabase.functions.invoke("backfill-event-fees", {
+        const { data, error } = await supabaseData.functions.invoke("backfill-event-fees", {
           body: { limit: 20 },
         });
         if (error) { toast.error(error.message || "Backfill failed"); break; }

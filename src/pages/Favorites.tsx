@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { Heart, Archive } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseData } from "@/integrations/supabase/dataClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useFavorites } from "@/hooks/useFavorites";
 import { DevEvent } from "@/lib/events";
@@ -42,7 +42,7 @@ export default function Favorites() {
       return;
     }
     setLoading(true);
-    supabase
+    supabaseData
       .from("events")
       .select("*")
       .in("id", ids)

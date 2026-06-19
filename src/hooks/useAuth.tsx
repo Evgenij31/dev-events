@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { setSupabaseAccessToken, supabaseData } from "@/integrations/supabase/dataClient";
 
 interface AuthContextValue {
   user: User | null;
@@ -27,8 +28,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let currentUserId: string | null = null;
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, sess) => {
       const nextUserId = sess?.user?.id ?? null;
+      setSupabaseAccessToken(sess?.access_token ?? null);
       setSession(sess);
       // Only swap the user reference when the identity actually changes,
       // so token refreshes don't retrigger every dependent effect.
@@ -37,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(sess?.user ?? null);
         if (sess?.user) {
           setTimeout(() => {
-            supabase
+            supabaseData
               .from("profiles")
               .select("username")
               .eq("user_id", sess.user.id)
@@ -48,17 +50,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUsername(null);
         }
       }
-    });
-
-    // Only used to flip the initial loading flag — do NOT setUser/setSession here.
-    supabase.auth.getSession().then(() => {
-      setLoading(false);
+      if (event === "INITIAL_SESSION") setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
   const signOut = async () => {
+    setSupabaseAccessToken(null);
     await supabase.auth.signOut();
   };
 

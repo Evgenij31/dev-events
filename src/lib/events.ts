@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseData } from "@/integrations/supabase/dataClient";
 
 export interface DevEvent {
   id: string;
@@ -45,7 +45,7 @@ function mapRow(row: any): DevEvent {
 }
 
 export async function getEvents(): Promise<DevEvent[]> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseData
     .from("events")
     .select("*")
     .order("date", { ascending: true });
@@ -58,7 +58,7 @@ export async function getEvents(): Promise<DevEvent[]> {
 }
 
 export async function addEvent(event: Omit<DevEvent, "id">): Promise<DevEvent | null> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseData
     .from("events")
     .insert({
       title: event.title,
@@ -89,7 +89,7 @@ export async function addEvent(event: Omit<DevEvent, "id">): Promise<DevEvent | 
 }
 
 export async function updateEvent(id: string, updates: Partial<DevEvent>) {
-  const { error } = await supabase
+  const { error } = await supabaseData
     .from("events")
     .update({
       ...(updates.title !== undefined && { title: updates.title }),
@@ -115,12 +115,12 @@ export async function updateEvent(id: string, updates: Partial<DevEvent>) {
 }
 
 export async function deleteEvent(id: string) {
-  const { error } = await supabase.from("events").delete().eq("id", id);
+  const { error } = await supabaseData.from("events").delete().eq("id", id);
   if (error) console.error("Error deleting event:", error);
 }
 
 export async function checkDuplicate(title: string, date: string): Promise<boolean> {
-  const { data } = await supabase
+  const { data } = await supabaseData
     .from("events")
     .select("id")
     .ilike("title", title)

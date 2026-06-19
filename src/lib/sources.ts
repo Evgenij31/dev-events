@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseData } from "@/integrations/supabase/dataClient";
 
 export interface ScrapeSource {
   id: string;
@@ -8,7 +8,7 @@ export interface ScrapeSource {
 }
 
 export async function getSources(): Promise<ScrapeSource[]> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseData
     .from("scrape_sources")
     .select("*")
     .order("created_at", { ascending: false });
@@ -27,7 +27,7 @@ export async function getSources(): Promise<ScrapeSource[]> {
 }
 
 export async function addSource(name: string, url: string): Promise<ScrapeSource | null> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseData
     .from("scrape_sources")
     .insert({ name, url })
     .select()
@@ -42,12 +42,12 @@ export async function addSource(name: string, url: string): Promise<ScrapeSource
 }
 
 export async function deleteSource(id: string) {
-  const { error } = await supabase.from("scrape_sources").delete().eq("id", id);
+  const { error } = await supabaseData.from("scrape_sources").delete().eq("id", id);
   if (error) console.error("Error deleting source:", error);
 }
 
 export async function updateSourceLastScraped(id: string) {
-  const { error } = await supabase
+  const { error } = await supabaseData
     .from("scrape_sources")
     .update({ last_scraped: new Date().toISOString() })
     .eq("id", id);
