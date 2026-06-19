@@ -25,6 +25,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Subscribe first; onAuthStateChange is the single source of truth for
+    // session/user/username. Supabase v2 emits INITIAL_SESSION on subscribe,
+    // so we don't need getSession() to setUser — that caused a race where a
+    // late-resolving getSession() could clobber a just-signed-in user.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess) => {
       setSession(sess);
       setUser(sess?.user ?? null);
@@ -42,17 +46,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    supabase.auth.getSession().then(({ data: { session: sess } }) => {
-      setSession(sess);
-      setUser(sess?.user ?? null);
-      if (sess?.user) {
-        supabase
-          .from("profiles")
-          .select("username")
-          .eq("user_id", sess.user.id)
-          .maybeSingle()
-          .then(({ data }) => setUsername(data?.username ?? null));
-      }
+    // Only used to flip the initial loading flag — do NOT setUser/setSession here.
+    supabase.auth.getSession().then(() => {
       setLoading(false);
     });
 
