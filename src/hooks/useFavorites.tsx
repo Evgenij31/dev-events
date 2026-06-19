@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseData } from "@/integrations/supabase/dataClient";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
 
@@ -28,7 +28,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
       return;
     }
     setLoading(true);
-    supabase
+    supabaseData
       .from("favorites")
       .select("event_id")
       .eq("user_id", user.id)
@@ -54,14 +54,14 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
       return next;
     });
     if (has) {
-      const { error } = await supabase
+      const { error } = await supabaseData
         .from("favorites")
         .delete()
         .eq("user_id", user.id)
         .eq("event_id", eventId);
       if (error) toast.error("Failed to remove favorite.");
     } else {
-      const { error } = await supabase
+      const { error } = await supabaseData
         .from("favorites")
         .insert({ user_id: user.id, event_id: eventId });
       if (error) toast.error("Failed to add favorite.");

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Terminal } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseData } from "@/integrations/supabase/dataClient";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +31,7 @@ export default function EditProfile() {
       return;
     }
     setSaving(true);
-    const { error } = await supabase
+    const { error } = await supabaseData
       .from("profiles")
       .upsert({ user_id: user.id, username: trimmed }, { onConflict: "user_id" });
     setSaving(false);
