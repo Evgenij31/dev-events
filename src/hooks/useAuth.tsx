@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { setSupabaseAccessToken } from "@/integrations/supabase/dataClient";
+import { setSupabaseAccessToken, supabaseData } from "@/integrations/supabase/dataClient";
 
 interface AuthContextValue {
   user: User | null;
@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(sess?.user ?? null);
         if (sess?.user) {
           setTimeout(() => {
-            supabase
+            supabaseData
               .from("profiles")
               .select("username")
               .eq("user_id", sess.user.id)
