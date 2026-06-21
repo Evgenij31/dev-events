@@ -236,6 +236,7 @@ serve(async (req) => {
       ...ev,
       feeIsFree: ev.fee_is_free ?? undefined,
       feeAmount: ev.fee_amount ?? undefined,
+      feeAmountMax: ev.fee_amount_max ?? undefined,
       feeCurrency: ev.fee_currency ?? undefined,
     }));
 
