@@ -9,6 +9,7 @@ const corsHeaders = {
 interface FeeResult {
   fee_is_free?: boolean;
   fee_amount?: number;
+  fee_amount_max?: number;
   fee_currency?: string;
 }
 
