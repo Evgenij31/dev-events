@@ -130,7 +130,7 @@ serve(async (req) => {
           {
             role: "system",
               content:
-                "You are an expert at extracting developer event information from web content. Extract all events you can find. For each event, determine the type (conference, meetup, workshop, or hackathon), relevant tags, the registration/event URL if available, region info (continent, country, city, plus approximate latitude/longitude of the city), and fee/ticket-price information. For virtual events, set continent/country/city to 'Online' and omit coordinates. For fees: if the event is explicitly free, set fee_is_free=true. If a paid ticket price is shown, return the lowest price as fee_amount with the ISO 4217 fee_currency (e.g. USD, EUR, GBP). If no fee information is available, omit all three fee fields.",
+                "You are an expert at extracting developer event information from web content. Extract all events you can find. For each event, determine the type (conference, meetup, workshop, or hackathon), relevant tags, the registration/event URL if available, region info (continent, country, city, plus approximate latitude/longitude of the city), and fee/ticket-price information. For virtual events, set continent/country/city to 'Online' and omit coordinates. For fees: if the event is explicitly free, set fee_is_free=true. If a paid ticket price is shown, return the LOWEST price as fee_amount and the HIGHEST price as fee_amount_max (omit fee_amount_max if there is only one tier), with the ISO 4217 fee_currency (e.g. USD, EUR, GBP). Consider all ticket tiers / early-bird / VIP / late-bird options when computing the range. If no fee information is available, omit all fee fields.",
           },
           {
             role: "user",
