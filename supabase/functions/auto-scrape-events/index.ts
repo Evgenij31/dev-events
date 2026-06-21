@@ -161,6 +161,7 @@ serve(async (req) => {
                             longitude: { type: "number" },
                             fee_is_free: { type: "boolean" },
                             fee_amount: { type: "number" },
+                            fee_amount_max: { type: "number", description: "Highest price when multiple tiers exist; omit if single price." },
                             fee_currency: { type: "string", description: "ISO 4217 code, e.g. USD, EUR" },
                           },
                           required: ["title", "description", "date", "time", "location", "type", "tags"],
