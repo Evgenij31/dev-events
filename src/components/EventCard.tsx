@@ -25,17 +25,25 @@ function FeeLine({ event }: { event: DevEvent }) {
     label = "Free";
     className = "text-accent";
   } else if (typeof event.feeAmount === "number" && event.feeCurrency) {
-    const orig = formatMoney(event.feeAmount, event.feeCurrency);
-    if (ready && event.feeCurrency.toUpperCase() !== currency.toUpperCase()) {
-      const converted = convert(event.feeAmount, event.feeCurrency, currency, rates);
-      if (converted != null) {
-        label = `${formatMoney(converted, currency)}`;
-        title = `Original: ${orig}`;
-      } else {
-        label = orig;
+    const hasRange = typeof event.feeAmountMax === "number" && event.feeAmountMax > event.feeAmount;
+    const fmt = (amt: number) => {
+      const orig = formatMoney(amt, event.feeCurrency!);
+      if (ready && event.feeCurrency!.toUpperCase() !== currency.toUpperCase()) {
+        const converted = convert(amt, event.feeCurrency!, currency, rates);
+        if (converted != null) return { display: formatMoney(converted, currency), orig };
+      }
+      return { display: orig, orig };
+    };
+    const lo = fmt(event.feeAmount);
+    if (hasRange) {
+      const hi = fmt(event.feeAmountMax!);
+      label = `${lo.display} – ${hi.display}`;
+      if (lo.display !== lo.orig || hi.display !== hi.orig) {
+        title = `Original: ${lo.orig} – ${hi.orig}`;
       }
     } else {
-      label = orig;
+      label = lo.display;
+      if (lo.display !== lo.orig) title = `Original: ${lo.orig}`;
     }
     className = "text-foreground";
   } else {
