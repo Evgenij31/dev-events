@@ -109,6 +109,7 @@ export async function updateEvent(id: string, updates: Partial<DevEvent>) {
       ...(updates.latitude !== undefined && { latitude: updates.latitude ?? null }),
       ...(updates.longitude !== undefined && { longitude: updates.longitude ?? null }),
       ...(updates.feeAmount !== undefined && { fee_amount: updates.feeAmount ?? null }),
+      ...(updates.feeAmountMax !== undefined && { fee_amount_max: updates.feeAmountMax ?? null }),
       ...(updates.feeCurrency !== undefined && { fee_currency: updates.feeCurrency || null }),
       ...(updates.feeIsFree !== undefined && { fee_is_free: updates.feeIsFree ?? null }),
     })
