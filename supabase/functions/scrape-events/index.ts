@@ -166,6 +166,7 @@ serve(async (req) => {
                         longitude: { type: "number", description: "Approximate longitude of the event city. Omit if online or unknown." },
                         fee_is_free: { type: "boolean", description: "True if the event is explicitly free. Omit if unknown." },
                         fee_amount: { type: "number", description: "Lowest ticket/registration price as a number (no currency symbol). Omit if free or unknown." },
+                        fee_amount_max: { type: "number", description: "Highest ticket/registration price as a number when multiple tiers exist. Omit if there is only one price or unknown." },
                         fee_currency: { type: "string", description: "ISO 4217 currency code for fee_amount (e.g. USD, EUR, GBP). Omit if free or unknown." },
                       },
                       required: ["title", "description", "date", "time", "location", "type", "tags"],
