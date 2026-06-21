@@ -23,6 +23,7 @@ export type Database = {
           date: string
           description: string
           fee_amount: number | null
+          fee_amount_max: number | null
           fee_currency: string | null
           fee_is_free: boolean | null
           id: string
@@ -43,6 +44,7 @@ export type Database = {
           date: string
           description: string
           fee_amount?: number | null
+          fee_amount_max?: number | null
           fee_currency?: string | null
           fee_is_free?: boolean | null
           id?: string
@@ -63,6 +65,7 @@ export type Database = {
           date?: string
           description?: string
           fee_amount?: number | null
+          fee_amount_max?: number | null
           fee_currency?: string | null
           fee_is_free?: boolean | null
           id?: string

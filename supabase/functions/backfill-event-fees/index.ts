@@ -9,6 +9,7 @@ const corsHeaders = {
 interface FeeResult {
   fee_is_free?: boolean;
   fee_amount?: number;
+  fee_amount_max?: number;
   fee_currency?: string;
 }
 
@@ -25,7 +26,7 @@ async function extractFee(markdown: string, lovableKey: string): Promise<FeeResu
         {
           role: "system",
           content:
-            "You extract ticket/registration fee info from an event web page. If explicitly free, set fee_is_free=true. If a paid ticket price is shown, return the lowest price as fee_amount (number, no currency symbol) with fee_currency as an ISO 4217 code (USD, EUR, GBP, etc.). If no fee info is found, omit all fields.",
+            "You extract ticket/registration fee info from an event web page. If explicitly free, set fee_is_free=true. If paid ticket prices are shown, return the LOWEST as fee_amount and the HIGHEST as fee_amount_max (omit fee_amount_max if only one tier exists), with fee_currency as an ISO 4217 code (USD, EUR, GBP, etc.). Consider all ticket tiers / early-bird / VIP. If no fee info, omit all fields.",
         },
         { role: "user", content: markdown.slice(0, 15000) },
       ],
@@ -40,6 +41,7 @@ async function extractFee(markdown: string, lovableKey: string): Promise<FeeResu
               properties: {
                 fee_is_free: { type: "boolean" },
                 fee_amount: { type: "number" },
+                fee_amount_max: { type: "number" },
                 fee_currency: { type: "string" },
               },
             },
@@ -130,6 +132,7 @@ serve(async (req) => {
         const update: Record<string, unknown> = {};
         if (typeof fee.fee_is_free === "boolean") update.fee_is_free = fee.fee_is_free;
         if (typeof fee.fee_amount === "number") update.fee_amount = fee.fee_amount;
+        if (typeof fee.fee_amount_max === "number") update.fee_amount_max = fee.fee_amount_max;
         if (typeof fee.fee_currency === "string") update.fee_currency = fee.fee_currency.toUpperCase();
 
         if (Object.keys(update).length === 0) {

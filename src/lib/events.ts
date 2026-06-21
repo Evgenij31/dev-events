@@ -16,6 +16,7 @@ export interface DevEvent {
   latitude?: number;
   longitude?: number;
   feeAmount?: number;
+  feeAmountMax?: number;
   feeCurrency?: string;
   feeIsFree?: boolean;
 }
@@ -39,6 +40,7 @@ function mapRow(row: any): DevEvent {
     latitude: row.latitude ?? undefined,
     longitude: row.longitude ?? undefined,
     feeAmount: row.fee_amount != null ? Number(row.fee_amount) : undefined,
+    feeAmountMax: row.fee_amount_max != null ? Number(row.fee_amount_max) : undefined,
     feeCurrency: row.fee_currency || undefined,
     feeIsFree: row.fee_is_free ?? undefined,
   };
@@ -75,6 +77,7 @@ export async function addEvent(event: Omit<DevEvent, "id">): Promise<DevEvent | 
       latitude: event.latitude ?? null,
       longitude: event.longitude ?? null,
       fee_amount: event.feeAmount ?? null,
+      fee_amount_max: event.feeAmountMax ?? null,
       fee_currency: event.feeCurrency || null,
       fee_is_free: event.feeIsFree ?? null,
     })
@@ -106,6 +109,7 @@ export async function updateEvent(id: string, updates: Partial<DevEvent>) {
       ...(updates.latitude !== undefined && { latitude: updates.latitude ?? null }),
       ...(updates.longitude !== undefined && { longitude: updates.longitude ?? null }),
       ...(updates.feeAmount !== undefined && { fee_amount: updates.feeAmount ?? null }),
+      ...(updates.feeAmountMax !== undefined && { fee_amount_max: updates.feeAmountMax ?? null }),
       ...(updates.feeCurrency !== undefined && { fee_currency: updates.feeCurrency || null }),
       ...(updates.feeIsFree !== undefined && { fee_is_free: updates.feeIsFree ?? null }),
     })

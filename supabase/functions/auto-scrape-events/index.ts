@@ -125,7 +125,7 @@ serve(async (req) => {
             messages: [
               {
                 role: "system",
-                content: "Extract all developer events from the web content. For each event determine the type (conference, meetup, workshop, or hackathon), relevant tags, registration URL, region info (continent, country, city, latitude, longitude of the city), and fee/ticket-price information. Use 'Online' for virtual events and omit coordinates in that case. For fees: if explicitly free set fee_is_free=true; if a paid price is listed return fee_amount (number) and fee_currency (ISO 4217 code); if unknown, omit all fee fields.",
+                content: "Extract all developer events from the web content. For each event determine the type (conference, meetup, workshop, or hackathon), relevant tags, registration URL, region info (continent, country, city, latitude, longitude of the city), and fee/ticket-price information. Use 'Online' for virtual events and omit coordinates in that case. For fees: if explicitly free set fee_is_free=true; if paid prices are listed return the LOWEST as fee_amount and the HIGHEST as fee_amount_max (omit fee_amount_max if only one tier exists), with fee_currency (ISO 4217). Consider all ticket tiers / early-bird / VIP. If unknown, omit all fee fields.",
               },
               {
                 role: "user",
@@ -161,6 +161,7 @@ serve(async (req) => {
                             longitude: { type: "number" },
                             fee_is_free: { type: "boolean" },
                             fee_amount: { type: "number" },
+                            fee_amount_max: { type: "number", description: "Highest price when multiple tiers exist; omit if single price." },
                             fee_currency: { type: "string", description: "ISO 4217 code, e.g. USD, EUR" },
                           },
                           required: ["title", "description", "date", "time", "location", "type", "tags"],
@@ -233,6 +234,7 @@ serve(async (req) => {
             longitude: typeof ev.longitude === "number" ? ev.longitude : null,
             fee_is_free: typeof ev.fee_is_free === "boolean" ? ev.fee_is_free : null,
             fee_amount: typeof ev.fee_amount === "number" ? ev.fee_amount : null,
+            fee_amount_max: typeof ev.fee_amount_max === "number" ? ev.fee_amount_max : null,
             fee_currency: typeof ev.fee_currency === "string" ? ev.fee_currency.toUpperCase() : null,
           });
 
