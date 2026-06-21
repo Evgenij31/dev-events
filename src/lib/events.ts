@@ -77,6 +77,7 @@ export async function addEvent(event: Omit<DevEvent, "id">): Promise<DevEvent | 
       latitude: event.latitude ?? null,
       longitude: event.longitude ?? null,
       fee_amount: event.feeAmount ?? null,
+      fee_amount_max: event.feeAmountMax ?? null,
       fee_currency: event.feeCurrency || null,
       fee_is_free: event.feeIsFree ?? null,
     })
