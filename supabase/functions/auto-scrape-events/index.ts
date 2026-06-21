@@ -234,6 +234,7 @@ serve(async (req) => {
             longitude: typeof ev.longitude === "number" ? ev.longitude : null,
             fee_is_free: typeof ev.fee_is_free === "boolean" ? ev.fee_is_free : null,
             fee_amount: typeof ev.fee_amount === "number" ? ev.fee_amount : null,
+            fee_amount_max: typeof ev.fee_amount_max === "number" ? ev.fee_amount_max : null,
             fee_currency: typeof ev.fee_currency === "string" ? ev.fee_currency.toUpperCase() : null,
           });
 
