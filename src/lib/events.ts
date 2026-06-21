@@ -16,6 +16,7 @@ export interface DevEvent {
   latitude?: number;
   longitude?: number;
   feeAmount?: number;
+  feeAmountMax?: number;
   feeCurrency?: string;
   feeIsFree?: boolean;
 }
