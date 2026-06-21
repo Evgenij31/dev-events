@@ -132,6 +132,7 @@ serve(async (req) => {
         const update: Record<string, unknown> = {};
         if (typeof fee.fee_is_free === "boolean") update.fee_is_free = fee.fee_is_free;
         if (typeof fee.fee_amount === "number") update.fee_amount = fee.fee_amount;
+        if (typeof fee.fee_amount_max === "number") update.fee_amount_max = fee.fee_amount_max;
         if (typeof fee.fee_currency === "string") update.fee_currency = fee.fee_currency.toUpperCase();
 
         if (Object.keys(update).length === 0) {
