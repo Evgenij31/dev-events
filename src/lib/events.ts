@@ -40,6 +40,7 @@ function mapRow(row: any): DevEvent {
     latitude: row.latitude ?? undefined,
     longitude: row.longitude ?? undefined,
     feeAmount: row.fee_amount != null ? Number(row.fee_amount) : undefined,
+    feeAmountMax: row.fee_amount_max != null ? Number(row.fee_amount_max) : undefined,
     feeCurrency: row.fee_currency || undefined,
     feeIsFree: row.fee_is_free ?? undefined,
   };
