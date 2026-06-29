@@ -1,5 +1,12 @@
 import { DevEvent } from "@/lib/events";
-import { Calendar, Clock, MapPin, ExternalLink, Heart, Ticket } from "lucide-react";
+import {
+  Calendar,
+  Clock,
+  MapPin,
+  ExternalLink,
+  Heart,
+  Ticket,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useFavorites } from "@/hooks/useFavorites";
 import { useAuth } from "@/hooks/useAuth";
@@ -25,12 +32,18 @@ function FeeLine({ event }: { event: DevEvent }) {
     label = "Free";
     className = "text-accent";
   } else if (typeof event.feeAmount === "number" && event.feeCurrency) {
-    const hasRange = typeof event.feeAmountMax === "number" && event.feeAmountMax > event.feeAmount;
+    const hasRange =
+      typeof event.feeAmountMax === "number" &&
+      event.feeAmountMax > event.feeAmount;
     const fmt = (amt: number) => {
       const orig = formatMoney(amt, event.feeCurrency!);
-      if (ready && event.feeCurrency!.toUpperCase() !== currency.toUpperCase()) {
+      if (
+        ready &&
+        event.feeCurrency!.toUpperCase() !== currency.toUpperCase()
+      ) {
         const converted = convert(amt, event.feeCurrency!, currency, rates);
-        if (converted != null) return { display: formatMoney(converted, currency), orig };
+        if (converted != null)
+          return { display: formatMoney(converted, currency), orig };
       }
       return { display: orig, orig };
     };
@@ -52,7 +65,10 @@ function FeeLine({ event }: { event: DevEvent }) {
   }
 
   return (
-    <div className="flex items-center gap-1.5 text-xs font-mono mb-2" title={title}>
+    <div
+      className="flex items-center gap-1.5 text-xs font-mono mb-2"
+      title={title}
+    >
       <Ticket className="h-3.5 w-3.5 text-primary" />
       <span className="text-muted-foreground">Fee:</span>
       <span className={className}>{label}</span>
@@ -84,13 +100,17 @@ export default function EventCard({ event }: { event: DevEvent }) {
       >
         <Heart
           className={`h-5 w-5 transition-colors ${
-            favorited ? "fill-destructive text-destructive" : "text-muted-foreground hover:text-destructive"
+            favorited
+              ? "fill-destructive text-destructive"
+              : "text-muted-foreground hover:text-destructive"
           }`}
         />
       </button>
 
       <div className="flex items-start justify-between gap-4 mb-3 pr-10">
-        <span className={`inline-block rounded-full border px-3 py-0.5 text-xs font-mono uppercase tracking-wider ${typeColors[event.type]}`}>
+        <span
+          className={`inline-block rounded-full border px-3 py-0.5 text-xs font-mono uppercase tracking-wider ${typeColors[event.type]}`}
+        >
           {event.type}
         </span>
       </div>
@@ -99,12 +119,18 @@ export default function EventCard({ event }: { event: DevEvent }) {
         {event.title}
       </h3>
 
-      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{event.description}</p>
+      <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+        {event.description}
+      </p>
 
       <div className="flex flex-wrap gap-4 text-xs text-muted-foreground mb-4">
         <span className="flex items-center gap-1">
           <Calendar className="h-3 w-3 text-primary" />
-          {new Date(event.date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+          {new Date(event.date).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })}
         </span>
         <span className="flex items-center gap-1">
           <Clock className="h-3 w-3 text-primary" />
@@ -118,7 +144,11 @@ export default function EventCard({ event }: { event: DevEvent }) {
 
       <div className="flex flex-wrap gap-2 mb-4">
         {event.tags.map((tag) => (
-          <Badge key={tag} variant="secondary" className="font-mono text-xs bg-muted text-muted-foreground border-border">
+          <Badge
+            key={tag}
+            variant="secondary"
+            className="font-mono text-xs bg-muted text-muted-foreground border-border"
+          >
             {tag}
           </Badge>
         ))}
