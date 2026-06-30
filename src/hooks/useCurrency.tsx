@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
-import { detectViewerCurrency, getRates, Rates } from "@/lib/currency";
+import { detectViewerCurrency, getRates, Rates } from "@/lib/currency.ts";
 
 interface CurrencyContextValue {
   currency: string;

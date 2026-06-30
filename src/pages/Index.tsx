@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Code, Users, Zap } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { getEvents, DevEvent } from "@/lib/events";
-import EventCard from "@/components/EventCard";
+import { Button } from "@/components/ui/button.tsx";
+import { getEvents, DevEvent } from "@/lib/events.ts";
+import EventCard from "@/components/EventCard.tsx";
 
 export default function Index() {
   const [events, setEvents] = useState<DevEvent[]>([]);

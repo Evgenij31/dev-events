@@ -1,5 +1,5 @@
-import { supabaseData } from "@/integrations/supabase/dataClient";
-import { DevEvent } from "@/lib/events";
+import { supabaseData } from "@/integrations/supabase/dataClient.ts";
+import { DevEvent } from "@/lib/events.ts";
 
 export type ScrapedEvent = Omit<DevEvent, "id">;
 

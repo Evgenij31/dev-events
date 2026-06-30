@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
-import { supabaseData } from "@/integrations/supabase/dataClient";
+import { supabaseData } from "@/integrations/supabase/dataClient.ts";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
 

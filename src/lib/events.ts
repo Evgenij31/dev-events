@@ -1,4 +1,4 @@
-import { supabaseData } from "@/integrations/supabase/dataClient";
+import { supabaseData } from "@/integrations/supabase/dataClient.ts";
 
 export interface DevEvent {
   id: string;

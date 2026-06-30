@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { Heart, Archive } from "lucide-react";
-import { supabaseData } from "@/integrations/supabase/dataClient";
-import { useAuth } from "@/hooks/useAuth";
-import { useFavorites } from "@/hooks/useFavorites";
-import { DevEvent } from "@/lib/events";
-import EventCard from "@/components/EventCard";
+import { supabaseData } from "@/integrations/supabase/dataClient.ts";
+import { useAuth } from "@/hooks/useAuth.tsx";
+import { useFavorites } from "@/hooks/useFavorites.tsx";
+import { DevEvent } from "@/lib/events.ts";
+import EventCard from "@/components/EventCard.tsx";
 
 function mapRow(row: any): DevEvent {
   return {

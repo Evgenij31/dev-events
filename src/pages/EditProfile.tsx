@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Terminal } from "lucide-react";
-import { supabaseData } from "@/integrations/supabase/dataClient";
-import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { supabaseData } from "@/integrations/supabase/dataClient.ts";
+import { useAuth } from "@/hooks/useAuth.tsx";
+import { Button } from "@/components/ui/button.tsx";
+import { Input } from "@/components/ui/input.tsx";
+import { Label } from "@/components/ui/label.tsx";
 import { toast } from "sonner";
 
 export default function EditProfile() {

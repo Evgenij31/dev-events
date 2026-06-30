@@ -1,4 +1,4 @@
-import { DevEvent } from "@/lib/events";
+import { DevEvent } from "@/lib/events.ts";
 import {
   Calendar,
   Clock,
@@ -7,11 +7,11 @@ import {
   Heart,
   Ticket,
 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { useFavorites } from "@/hooks/useFavorites";
-import { useAuth } from "@/hooks/useAuth";
-import { useCurrency } from "@/hooks/useCurrency";
-import { convert, formatMoney } from "@/lib/currency";
+import { Badge } from "@/components/ui/badge.tsx";
+import { useFavorites } from "@/hooks/useFavorites.tsx";
+import { useAuth } from "@/hooks/useAuth.tsx";
+import { useCurrency } from "@/hooks/useCurrency.tsx";
+import { convert, formatMoney } from "@/lib/currency.ts";
 import { useNavigate } from "react-router-dom";
 
 const typeColors: Record<string, string> = {

@@ -1,24 +1,24 @@
 import { useState, useMemo, useEffect } from "react";
 import { format } from "date-fns";
 import { CalendarIcon, Archive, MapPin, Loader2, X } from "lucide-react";
-import { getEvents, distanceKm, DevEvent } from "@/lib/events";
-import EventCard from "@/components/EventCard";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Calendar } from "@/components/ui/calendar";
+import { getEvents, distanceKm, DevEvent } from "@/lib/events.ts";
+import EventCard from "@/components/EventCard.tsx";
+import { cn } from "@/lib/utils.ts";
+import { Button } from "@/components/ui/button.tsx";
+import { Input } from "@/components/ui/input.tsx";
+import { Calendar } from "@/components/ui/calendar.tsx";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@/components/ui/popover.tsx";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/components/ui/select.tsx";
 import { toast } from "sonner";
 
 const types = ["all", "conference", "meetup", "workshop", "hackathon"] as const;
