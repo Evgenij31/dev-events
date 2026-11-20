@@ -1,20 +1,20 @@
-import { supabaseData } from "@/integrations/supabase/dataClient.ts";
+import { api } from "@/lib/api.ts";
 import { DevEvent } from "@/lib/events.ts";
 
 export type ScrapedEvent = Omit<DevEvent, "id">;
 
-export async function scrapeEventsFromUrl(url: string): Promise<ScrapedEvent[]> {
-  const { data, error } = await supabaseData.functions.invoke("scrape-events", {
-    body: { url },
+/** Scrapes a page for events (admin only). Passing sourceId also bumps that source's lastScraped. */
+export async function scrapeEventsFromUrl(url: string, sourceId?: string): Promise<ScrapedEvent[]> {
+  const { events } = await api<{ events: ScrapedEvent[] }>("/admin/scrape", {
+    body: { url, sourceId },
+    auth: "admin",
   });
+  return events;
+}
 
-  if (error) {
-    throw new Error(error.message || "Failed to scrape events");
-  }
-
-  if (data?.error) {
-    throw new Error(data.error);
-  }
-
-  return data?.events || [];
+export function backfillEventFees(limit = 20) {
+  return api<{ processed: number; updated: number; failed: number; remaining: boolean }>(
+    "/admin/backfill-fees",
+    { body: { limit }, auth: "admin" },
+  );
 }

@@ -4,19 +4,14 @@ import {
   addEvent,
   updateEvent,
   deleteEvent,
-  checkDuplicate as _checkDuplicate,
-  verifyAdmin,
+  importEvents,
+  adminSignIn,
+  hasAdminSession,
   DevEvent,
 } from "@/lib/events.ts";
-import { scrapeEventsFromUrl, ScrapedEvent } from "@/lib/api/scrape-events.ts";
-import { supabaseData } from "@/integrations/supabase/dataClient.ts";
-import {
-  getSources,
-  addSource,
-  deleteSource,
-  updateSourceLastScraped,
-  ScrapeSource,
-} from "@/lib/sources.ts";
+import { ApiError } from "@/lib/api.ts";
+import { scrapeEventsFromUrl, backfillEventFees, ScrapedEvent } from "@/lib/api/scrape-events.ts";
+import { getSources, addSource, deleteSource, ScrapeSource } from "@/lib/sources.ts";
 import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
 import { Textarea } from "@/components/ui/textarea.tsx";
@@ -54,7 +49,7 @@ const emptyForm = {
 };
 
 export default function Admin() {
-  const [authed, setAuthed] = useState(false);
+  const [authed, setAuthed] = useState(hasAdminSession);
   const [password, setPassword] = useState("");
   const [events, setEvents] = useState<DevEvent[]>([]);
   const [editing, setEditing] = useState<string | null>(null);
@@ -78,20 +73,7 @@ export default function Admin() {
     try {
       // Run in batches until done or error
       for (let i = 0; i < 20; i++) {
-        const { data, error } = await supabaseData.functions.invoke(
-          "backfill-event-fees",
-          {
-            body: { limit: 20 },
-          },
-        );
-        if (error) {
-          toast.error(error.message || "Backfill failed");
-          break;
-        }
-        if (data?.error) {
-          toast.error(data.error);
-          break;
-        }
+        const data = await backfillEventFees(20);
         totalProcessed += data?.processed || 0;
         totalUpdated += data?.updated || 0;
         if (!data?.remaining) break;
@@ -101,29 +83,45 @@ export default function Admin() {
       );
       refresh();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Backfill failed");
+      handleError(e, "Backfill failed");
     } finally {
       setBackfilling(false);
     }
   };
 
+  // Shows the error; if the admin session expired, drops back to the login form.
+  const handleError = (err: unknown, fallback: string) => {
+    if (err instanceof ApiError && err.status === 401) {
+      setAuthed(false);
+      toast.error("Admin session expired. Please log in again.");
+      return;
+    }
+    toast.error(err instanceof Error ? err.message : fallback);
+  };
+
   const refresh = async () => {
-    const [evts, srcs] = await Promise.all([getEvents(), getSources()]);
-    setEvents(evts);
-    setSources(srcs);
+    try {
+      const [evts, srcs] = await Promise.all([getEvents(), getSources()]);
+      setEvents(evts);
+      setSources(srcs);
+    } catch (err) {
+      handleError(err, "Failed to load admin data.");
+    }
   };
 
   useEffect(() => {
     if (authed) refresh();
   }, [authed]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (verifyAdmin(password)) {
+    try {
+      await adminSignIn(password);
+      setPassword("");
       setAuthed(true);
       toast.success("Welcome, admin!");
-    } else {
-      toast.error("Wrong password.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Login failed.");
     }
   };
 
@@ -133,12 +131,17 @@ export default function Admin() {
       .split(",")
       .map((t) => t.trim())
       .filter(Boolean);
-    if (editing) {
-      await updateEvent(editing, { ...form, tags, url: form.url || undefined });
-      toast.success("Event updated.");
-    } else {
-      await addEvent({ ...form, tags, url: form.url || undefined });
-      toast.success("Event created.");
+    try {
+      if (editing) {
+        await updateEvent(editing, { ...form, tags, url: form.url || "" });
+        toast.success("Event updated.");
+      } else {
+        await addEvent({ ...form, tags, url: form.url || undefined });
+        toast.success("Event created.");
+      }
+    } catch (err) {
+      handleError(err, "Failed to save event.");
+      return;
     }
     setForm(emptyForm);
     setEditing(null);
@@ -153,8 +156,12 @@ export default function Admin() {
   };
 
   const handleDelete = async (id: string) => {
-    await deleteEvent(id);
-    toast.success("Event deleted.");
+    try {
+      await deleteEvent(id);
+      toast.success("Event deleted.");
+    } catch (err) {
+      handleError(err, "Failed to delete event.");
+    }
     refresh();
   };
 
@@ -163,7 +170,7 @@ export default function Admin() {
     setScrapedEvents([]);
     setSelectedScrapes(new Set());
     try {
-      const events = await scrapeEventsFromUrl(url);
+      const events = await scrapeEventsFromUrl(url, sourceId);
       if (events.length === 0) {
         toast.info("No events found on that page.");
       } else {
@@ -171,49 +178,28 @@ export default function Admin() {
         setSelectedScrapes(new Set(events.map((_, i) => i)));
         toast.success(`Found ${events.length} event(s).`);
       }
-      if (sourceId) {
-        await updateSourceLastScraped(sourceId);
-        setSources(await getSources());
-      }
+      if (sourceId) setSources(await getSources());
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Scrape failed.");
+      handleError(err, "Scrape failed.");
     } finally {
       setScraping(false);
     }
   };
 
   const handleImportSelected = async () => {
-    const existingEvents = await getEvents();
-    const today = new Date().toISOString().split("T")[0];
-    let imported = 0;
-    let skipped = 0;
-    let pastSkipped = 0;
-
-    for (const idx of selectedScrapes) {
-      const ev = scrapedEvents[idx];
-      if (ev.date < today) {
-        pastSkipped++;
-        continue;
-      }
-      const isDuplicate = existingEvents.some(
-        (e) =>
-          e.title.toLowerCase() === ev.title.toLowerCase() &&
-          e.date === ev.date,
+    try {
+      const { imported, duplicates, past } = await importEvents(
+        Array.from(selectedScrapes, (idx) => scrapedEvents[idx]),
       );
-      if (isDuplicate) {
-        skipped++;
-      } else {
-        await addEvent(ev);
-        imported++;
-      }
+      const parts = [`Imported ${imported} event(s)`];
+      if (duplicates > 0) parts.push(`${duplicates} duplicate(s)`);
+      if (past > 0) parts.push(`${past} past event(s) skipped`);
+      toast.success(parts.join(", ") + ".");
+      setScrapedEvents([]);
+      setSelectedScrapes(new Set());
+    } catch (err) {
+      handleError(err, "Import failed.");
     }
-
-    const parts = [`Imported ${imported} event(s)`];
-    if (skipped > 0) parts.push(`${skipped} duplicate(s)`);
-    if (pastSkipped > 0) parts.push(`${pastSkipped} past event(s) skipped`);
-    toast.success(parts.join(", ") + ".");
-    setScrapedEvents([]);
-    setSelectedScrapes(new Set());
     refresh();
   };
 
@@ -222,16 +208,24 @@ export default function Admin() {
       toast.error("Enter a name and URL.");
       return;
     }
-    await addSource(sourceName.trim(), scrapeUrl.trim());
-    setSourceName("");
-    toast.success("Source saved.");
-    setSources(await getSources());
+    try {
+      await addSource(sourceName.trim(), scrapeUrl.trim());
+      setSourceName("");
+      toast.success("Source saved.");
+      setSources(await getSources());
+    } catch (err) {
+      handleError(err, "Failed to save source.");
+    }
   };
 
   const handleDeleteSource = async (id: string) => {
-    await deleteSource(id);
-    toast.success("Source deleted.");
-    setSources(await getSources());
+    try {
+      await deleteSource(id);
+      toast.success("Source deleted.");
+      setSources(await getSources());
+    } catch (err) {
+      handleError(err, "Failed to delete source.");
+    }
   };
 
   const toggleScrapeSelection = (idx: number) => {

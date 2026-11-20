@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Terminal } from "lucide-react";
-import { supabaseData } from "@/integrations/supabase/dataClient.ts";
 import { useAuth } from "@/hooks/useAuth.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
@@ -9,7 +8,7 @@ import { Label } from "@/components/ui/label.tsx";
 import { toast } from "sonner";
 
 export default function EditProfile() {
-  const { user, username, loading: authLoading } = useAuth();
+  const { user, username, loading: authLoading, updateUsername } = useAuth();
   const navigate = useNavigate();
   const [newUsername, setNewUsername] = useState("");
   const [saving, setSaving] = useState(false);
@@ -31,16 +30,14 @@ export default function EditProfile() {
       return;
     }
     setSaving(true);
-    const { error } = await supabaseData
-      .from("profiles")
-      .upsert({ user_id: user.id, username: trimmed }, { onConflict: "user_id" });
-    setSaving(false);
-    if (error) {
-      toast.error(error.message.includes("duplicate") ? "Username already taken." : error.message);
-      return;
+    try {
+      await updateUsername(trimmed);
+      toast.success("Profile updated.");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to update profile.");
+    } finally {
+      setSaving(false);
     }
-    toast.success("Profile updated.");
-    window.location.reload();
   };
 
   return (

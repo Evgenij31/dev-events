@@ -1,30 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { Heart, Archive } from "lucide-react";
-import { supabaseData } from "@/integrations/supabase/dataClient.ts";
 import { useAuth } from "@/hooks/useAuth.tsx";
 import { useFavorites } from "@/hooks/useFavorites.tsx";
-import { DevEvent } from "@/lib/events.ts";
+import { DevEvent, getEventsByIds } from "@/lib/events.ts";
 import EventCard from "@/components/EventCard.tsx";
-
-function mapRow(row: any): DevEvent {
-  return {
-    id: row.id,
-    title: row.title,
-    description: row.description,
-    date: row.date,
-    time: row.time,
-    location: row.location,
-    type: row.type,
-    tags: row.tags || [],
-    url: row.url || undefined,
-    continent: row.continent || undefined,
-    country: row.country || undefined,
-    city: row.city || undefined,
-    latitude: row.latitude ?? undefined,
-    longitude: row.longitude ?? undefined,
-  };
-}
 
 export default function Favorites() {
   const { user, loading: authLoading } = useAuth();
@@ -42,15 +22,10 @@ export default function Favorites() {
       return;
     }
     setLoading(true);
-    supabaseData
-      .from("events")
-      .select("*")
-      .in("id", ids)
-      .order("date", { ascending: true })
-      .then(({ data }) => {
-        setEvents((data || []).map(mapRow));
-        setLoading(false);
-      });
+    getEventsByIds(ids)
+      .then(setEvents)
+      .catch(() => setEvents([]))
+      .finally(() => setLoading(false));
   }, [user, favoriteIds]);
 
   const today = new Date().toISOString().split("T")[0];

@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
-import { supabaseData } from "@/integrations/supabase/dataClient.ts";
+import { api } from "@/lib/api.ts";
 import { useAuth } from "./useAuth";
 import { toast } from "sonner";
 
@@ -19,54 +19,57 @@ const FavoritesContext = createContext<FavoritesContextValue>({
 
 export function FavoritesProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
+  const userId = user?.id;
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!user) {
+    if (!userId) {
       setFavoriteIds(new Set());
       return;
     }
+    let cancelled = false;
     setLoading(true);
-    supabaseData
-      .from("favorites")
-      .select("event_id")
-      .eq("user_id", user.id)
-      .then(({ data }) => {
-        setFavoriteIds(new Set((data || []).map((r) => r.event_id)));
-        setLoading(false);
-      });
-  }, [user]);
+    api<{ eventIds: string[] }>("/favorites", { auth: "user" })
+      .then(({ eventIds }) => !cancelled && setFavoriteIds(new Set(eventIds)))
+      .catch(() => !cancelled && toast.error("Failed to load favorites."))
+      .finally(() => !cancelled && setLoading(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   const isFavorite = useCallback((id: string) => favoriteIds.has(id), [favoriteIds]);
 
-  const toggleFavorite = useCallback(async (eventId: string) => {
-    if (!user) {
-      toast.error("Please sign in to favorite events.");
-      return;
-    }
-    const has = favoriteIds.has(eventId);
-    // optimistic
-    setFavoriteIds((prev) => {
-      const next = new Set(prev);
-      if (has) next.delete(eventId);
-      else next.add(eventId);
-      return next;
-    });
-    if (has) {
-      const { error } = await supabaseData
-        .from("favorites")
-        .delete()
-        .eq("user_id", user.id)
-        .eq("event_id", eventId);
-      if (error) toast.error("Failed to remove favorite.");
-    } else {
-      const { error } = await supabaseData
-        .from("favorites")
-        .insert({ user_id: user.id, event_id: eventId });
-      if (error) toast.error("Failed to add favorite.");
-    }
-  }, [user, favoriteIds]);
+  const toggleFavorite = useCallback(
+    async (eventId: string) => {
+      if (!userId) {
+        toast.error("Please sign in to favorite events.");
+        return;
+      }
+      const has = favoriteIds.has(eventId);
+      const flip = (prev: Set<string>) => {
+        const next = new Set(prev);
+        if (has) next.delete(eventId);
+        else next.add(eventId);
+        return next;
+      };
+      setFavoriteIds(flip); // optimistic
+      try {
+        await api(`/favorites/${eventId}`, { method: has ? "DELETE" : "PUT", auth: "user" });
+      } catch {
+        setFavoriteIds((prev) => {
+          // roll back
+          const next = new Set(prev);
+          if (has) next.add(eventId);
+          else next.delete(eventId);
+          return next;
+        });
+        toast.error(has ? "Failed to remove favorite." : "Failed to add favorite.");
+      }
+    },
+    [userId, favoriteIds],
+  );
 
   return (
     <FavoritesContext.Provider value={{ favoriteIds, isFavorite, toggleFavorite, loading }}>

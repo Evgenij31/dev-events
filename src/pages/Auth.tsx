@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Terminal } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client.ts";
-import { lovable } from "@/integrations/lovable/index.ts";
 import { useAuth } from "@/hooks/useAuth.tsx";
 import { Button } from "@/components/ui/button.tsx";
 import { Input } from "@/components/ui/input.tsx";
@@ -10,7 +8,7 @@ import { Label } from "@/components/ui/label.tsx";
 import { toast } from "sonner";
 
 export default function Auth() {
-  const { user } = useAuth();
+  const { user, signIn, signUp } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
@@ -30,35 +28,15 @@ export default function Auth() {
         if (!username.trim() || username.trim().length < 3) {
           throw new Error("Username must be at least 3 characters.");
         }
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/favorites`,
-            data: { username: username.trim() },
-          },
-        });
-        if (error) throw error;
+        await signUp(email, password, username.trim());
         toast.success("Account created. You're signed in.");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        await signIn(email, password);
         toast.success("Welcome back.");
       }
     } catch (err: any) {
       toast.error(err.message || "Authentication failed.");
     } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogle = async () => {
-    setLoading(true);
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/favorites",
-    });
-    if (result.error) {
-      toast.error("Google sign-in failed.");
       setLoading(false);
     }
   };
@@ -117,21 +95,6 @@ export default function Auth() {
               {loading ? "..." : mode === "signin" ? "Sign in" : "Create account"}
             </Button>
           </form>
-
-          <div className="my-4 flex items-center gap-2 text-xs font-mono text-muted-foreground">
-            <div className="flex-1 h-px bg-border" />
-            OR
-            <div className="flex-1 h-px bg-border" />
-          </div>
-
-          <Button
-            variant="outline"
-            onClick={handleGoogle}
-            disabled={loading}
-            className="w-full font-mono"
-          >
-            Continue with Google
-          </Button>
 
           <button
             type="button"
